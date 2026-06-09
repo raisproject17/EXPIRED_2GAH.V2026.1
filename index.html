@@ -115,14 +115,14 @@
         <main class="flex-1 overflow-y-auto w-full bg-gray-50 dark:bg-gray-900 relative" id="main-content">
             <div class="p-4 md:p-8" id="page-container">
                 
-                <!-- DASHBOARD -->
                 <div id="page-dashboard" class="page-content space-y-6 animate-fade-in">
                     <h2 class="text-2xl font-bold mb-6">Dashboard Monitoring</h2>
                     
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
                         <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex justify-between items-center">
                             <h3 class="font-bold text-lg"><i class="fa-solid fa-list-check mr-2 text-primary"></i>Status Pengerjaan Rak</h3>
-                            <button onclick="refreshRakStatus()" class="text-blue-500 hover:text-blue-700 transition" title="Refresh Status Rak"><i class="fa-solid fa-rotate-right text-lg"></i></button>
+                            <!-- ICON DITAMBAHKAN ID sync-icon-dash UNTUK ANIMASI -->
+                            <button onclick="refreshRakStatus()" class="text-blue-500 hover:text-blue-700 transition" title="Refresh Status Rak"><i id="sync-icon-dash" class="fa-solid fa-rotate-right text-lg"></i></button>
                         </div>
                         <div class="flex border-b border-gray-200 dark:border-gray-700">
                             <button onclick="switchDashTab('done')" id="tab-done" class="tab-btn active w-1/2 text-center"><i class="fa-solid fa-check-circle mr-2"></i>SUDAH DIKERJAKAN</button>
@@ -148,7 +148,6 @@
                     </div>
                 </div>
 
-                <!-- INPUT DATA -->
                 <div id="page-input" class="page-content hidden space-y-6 animate-fade-in">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 relative">
                         <h2 class="text-xl font-bold mb-4 border-b pb-2 dark:border-gray-700">Form Input Data</h2>
@@ -177,7 +176,6 @@
                     </div>
                 </div>
 
-                <!-- ALL DATA -->
                 <div id="page-all-data" class="page-content hidden space-y-6 animate-fade-in">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                         <div class="flex justify-between items-center mb-4">
@@ -210,7 +208,6 @@
                     </div>
                 </div>
 
-                <!-- HISTORY REKAP -->
                 <div id="page-rekap" class="page-content hidden space-y-6 animate-fade-in">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                         <div class="flex justify-between items-center mb-4">
@@ -244,7 +241,6 @@
                     </div>
                 </div>
 
-                <!-- KELOLA PRODUK -->
                 <div id="page-produk" class="page-content hidden space-y-6 animate-fade-in">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 max-w-lg mx-auto">
                         <h2 class="text-xl font-bold mb-4">Tambah Produk Baru</h2>
@@ -260,7 +256,6 @@
             </div>
         </main>
 
-        <!-- BOTTOM NAVIGATION -->
         <nav class="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 flex justify-around items-center text-[0.65rem] md:text-xs shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 pb-[env(safe-area-inset-bottom)]">
             <button onclick="router('dashboard')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-primary dark:text-blue-400 active-nav transition-colors" id="nav-dashboard"><i class="fa-solid fa-chart-pie text-lg mb-1"></i><span class="font-medium truncate">Dash</span></button>
             <button onclick="router('input')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-input"><i class="fa-solid fa-pen-to-square text-lg mb-1"></i><span class="font-medium truncate">Input</span></button>
@@ -270,7 +265,6 @@
         </nav>
     </div>
 
-    <!-- MODALS -->
     <div id="camera-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-95 flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-md bg-black rounded-lg overflow-hidden relative"><div id="reader" class="w-full" style="min-height: 300px;"></div><div class="p-4 flex justify-between items-center bg-gray-900"><button onclick="toggleTorch()" class="text-white p-2 border border-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-white hover:text-black transition"><i class="fa-solid fa-bolt"></i></button><span class="text-white text-sm font-mono">Scan Barcode</span><button onclick="closeScanner()" class="text-red-500 text-xl"><i class="fa-solid fa-times"></i></button></div></div>
     </div>
@@ -322,7 +316,7 @@
         });
         function showToast(icon, title) { Toast.fire({ icon: icon, title: title }); }
 
-        // --- INIT & EVENT LISTENERS ---
+        // --- STREAMING_CHUNK:Init & Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
             generateInputRows();
             initDashboard(); 
@@ -339,9 +333,9 @@
             });
         });
 
-        // --- CORE LOGIC & BACKGROUND SYNC ---
         const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
+        // --- STREAMING_CHUNK:Core Logic & Background Sync ---
         async function initDashboard() {
             // Load Local Cache First (Agar Web Terasa Super Cepat)
             const cRak = localStorage.getItem(CACHE_RAK);
@@ -399,6 +393,32 @@
             }
         }
 
+        async function refreshRakStatus() {
+            const icon = document.getElementById('sync-icon-dash');
+            if(icon) icon.classList.add('fa-spin'); // Mulai animasi memutar
+
+            try {
+                const [resRak, resExp] = await Promise.all([
+                    fetchAPI('getRakData', {}, 'GET', true),
+                    fetchAPI('getAllExpired', {}, 'GET', true)
+                ]);
+
+                if(resRak?.status === 'success') {
+                    localStorage.setItem(CACHE_RAK, JSON.stringify(resRak.data));
+                    renderRak(resRak.data);
+                }
+                if(resExp?.status === 'success') {
+                    localStorage.setItem(CACHE_EXP, JSON.stringify(resExp.data));
+                    const data = recalculateAge(resExp.data);
+                    globalExpiredData = data;
+                    renderStats(data);
+                    renderTableData(data);
+                }
+            } finally {
+                if(icon) icon.classList.remove('fa-spin'); // Hentikan animasi saat selesai atau error
+            }
+        }
+
         async function loadAllData(silent = false) {
             const res = await fetchAPI('getAllExpired', {}, 'GET', silent);
             if(res?.status === 'success') {
@@ -414,7 +434,7 @@
             if(res?.status === 'success') renderHistory(res.data);
         }
 
-        // --- RENDERING ---
+        // --- STREAMING_CHUNK:Rendering Functions ---
         function recalculateAge(data) {
             const today = new Date(); today.setHours(0,0,0,0);
             return data.map(item => {
@@ -538,7 +558,7 @@
             }).join('');
         }
 
-        // --- NAVIGATION ---
+        // --- STREAMING_CHUNK:Navigation ---
         function router(p) {
             document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden')); 
             document.querySelectorAll('.nav-item').forEach(el => {
@@ -576,9 +596,9 @@
         function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
         function resetInputForm() { document.getElementById('input-rak').value=''; document.getElementById('input-area').classList.add('hidden'); document.getElementById('input-overlay').classList.remove('hidden'); generateInputRows(); }
 
-        // --- API ---
+        // --- STREAMING_CHUNK:API ---
         async function fetchAPI(action, params = {}, method = 'GET', silent = false) {
-            if(!silent) showLoader(); // <--- Menggunakan Loading UI Baru
+            if(!silent) showLoader(); 
             try {
                 let url = `${GAS_API_URL}?action=${action}&_t=${new Date().getTime()}`;
                 let options = { method: method, redirect: 'follow' };
@@ -600,7 +620,7 @@
             }
         }
 
-        // --- SUBMISSION LOGIC ---
+        // --- STREAMING_CHUNK:Submission Logic ---
         async function lookupKaryawan() {
             const nik = document.getElementById('input-nik').value;
             if(!nik) return;
@@ -747,7 +767,7 @@
             }
         }
 
-        // --- UPDATE & DELETE FIXES (AUTO-SYNC HISTORY) ---
+        // --- STREAMING_CHUNK:Update & Delete Logic ---
         function openEditModal(i) { currentEditItem=i; document.getElementById('edit-desc').innerText=i.desc; document.getElementById('edit-date').value=i.exp; document.getElementById('edit-qty').value=i.qty; document.getElementById('edit-modal').classList.remove('hidden'); }
         
         async function saveEditExpired() { 
@@ -783,8 +803,8 @@
             });
         }
 
-        // --- UTILS ---
-        function sortTable(tableId, n) { /* Logic Sort Table sama */
+        // --- STREAMING_CHUNK:Utils & Helpers ---
+        function sortTable(tableId, n) { 
             const table = document.getElementById(tableId); let switching = true, dir = "asc", switchcount = 0;
             while (switching) {
                 switching = false; const rows = table.rows;
@@ -816,14 +836,15 @@
             } tbody.innerHTML = rows;
         }
         function renderRak(data) { const dl = document.getElementById('rak-list-options'); dl.innerHTML = ''; [...data.food, ...data.nonfood].forEach(r => { const opt = document.createElement('option'); opt.value = r; dl.appendChild(opt); }); }
-        function showWajibTarik() { /* Sama persis */
+        
+        function showWajibTarik() { 
             const tbody = document.getElementById('notif-tbody'); tbody.innerHTML = ''; const filtered = globalExpiredData.filter(i => parseInt(i.umur) <= 15).sort((a,b) => a.umur - b.umur);
             if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500">Aman! Tidak ada barang wajib tarik.</td></tr>'; } 
             else { tbody.innerHTML = filtered.map(i => { let badgeClass = parseInt(i.umur) < 8 ? 'text-red-600' : 'text-yellow-600'; return `<tr class="border-b dark:border-gray-700"><td class="p-2 font-mono font-bold">${i.rak}</td><td class="p-2 text-xs">${i.desc}<br><span class="text-gray-400">${i.plu}</span></td><td class="p-2 font-bold ${badgeClass}">${i.umur} Hari</td></tr>`; }).join(''); }
             document.getElementById('notif-modal').classList.remove('hidden');
         }
 
-        // --- SCANNER ---
+        // --- STREAMING_CHUNK:Scanner Logic ---
         async function openScanner(idx) { currentActiveRow = idx; document.getElementById('camera-modal').classList.remove('hidden'); await new Promise(r=>setTimeout(r,100)); if(html5QrcodeScanner) try{await html5QrcodeScanner.stop(); html5QrcodeScanner.clear()}catch(e){}; html5QrcodeScanner = new Html5Qrcode("reader"); try{await html5QrcodeScanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess)}catch(e){closeScanner()} }
         async function openScannerForProduct() { currentActiveRow='NEW_PROD'; document.getElementById('camera-modal').classList.remove('hidden'); await new Promise(r=>setTimeout(r,100)); if(html5QrcodeScanner) try{await html5QrcodeScanner.stop(); html5QrcodeScanner.clear()}catch(e){}; html5QrcodeScanner = new Html5Qrcode("reader"); try{await html5QrcodeScanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess)}catch(e){closeScanner()} }
         function onScanSuccess(t) { let c=String(t).trim(); if(c.length>1)c=c.substring(0,c.length-1); if(c.startsWith('0'))c=c.substring(1); closeScanner(); if(currentActiveRow==='NEW_PROD')document.getElementById('new-code').value=c; else{document.getElementById('code-'+currentActiveRow).value=c; handleProductInput(currentActiveRow,c);} }

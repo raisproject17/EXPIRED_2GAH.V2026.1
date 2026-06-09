@@ -311,6 +311,23 @@
         let currentEditItem = null;
         let globalExpiredData = [];
 
+        // --- TOAST NOTIFICATION (NOTIFIKASI KECIL) ---
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+
+        function showToast(icon, title) {
+            Toast.fire({ icon: icon, title: title });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             generateInputRows();
             initDashboard(); 
@@ -534,22 +551,48 @@
             generateInputRows(); 
         }
 
-        // --- API ---
+        // --- API & SINKRONISASI ---
         async function fetchAPI(action, params = {}, method = 'GET', silent = false) {
             if(!silent) Swal.showLoading();
             try {
-                let url = `${GAS_API_URL}?action=${action}`;
-                let options = { method: method };
-                if (method === 'POST') options.body = JSON.stringify(params);
-                else { const query = new URLSearchParams(params).toString(); url += `&${query}`; }
+                // Tambahkan timestamp untuk mencegah browser melakukan cache pada response lama
+                let url = `${GAS_API_URL}?action=${action}&_t=${new Date().getTime()}`;
+                
+                let options = { 
+                    method: method,
+                    redirect: 'follow' // CRITICAL: Wajib untuk GAS karena sistemnya melakukan redirect (302)
+                };
+                
+                if (method === 'POST') {
+                    options.body = JSON.stringify(params);
+                    // CRITICAL: Gunakan text/plain untuk melewati pemblokiran CORS Preflight (OPTIONS request) di GAS
+                    options.headers = {
+                        "Content-Type": "text/plain;charset=utf-8"
+                    };
+                } else { 
+                    const query = new URLSearchParams(params).toString(); 
+                    if(query) url += `&${query}`; 
+                }
+                
                 const req = await fetch(url, options);
+                
+                if (!req.ok) throw new Error(`HTTP Error: ${req.status}`);
+                
                 const res = await req.json();
                 if(!silent && typeof Swal !== 'undefined' && Swal.isVisible()) Swal.close();
+                
+                // Deteksi jika server GAS membalas dengan status error secara spesifik
+                if (res && res.status === 'error') {
+                    showToast('error', res.message || 'Terjadi kesalahan data di server');
+                }
+                
                 return res;
             } catch (err) {
                 if(!silent && typeof Swal !== 'undefined' && Swal.isVisible()) Swal.close();
-                console.error(err);
-                if(!silent) Swal.fire('Error', 'Gagal koneksi server', 'error');
+                console.error("Fetch API Error:", err);
+                
+                // Menampilkan notifikasi kecil jika gagal sinkronisasi (CORS/Offline/Server Error)
+                showToast('error', 'Gagal sinkronisasi data');
                 return null;
             }
         }

@@ -87,49 +87,26 @@
 </head>
 <body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-200 font-sans">
 
-    <div id="app" class="flex h-screen overflow-hidden relative">
-        <aside class="w-64 bg-white dark:bg-gray-800 shadow-lg flex flex-col transition-all duration-300 hidden md:flex z-50 md:z-20 md:static inset-y-0 left-0" id="sidebar">
-            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <h1 class="text-xl font-bold text-primary tracking-wider"><i class="fa-solid fa-boxes-stacked mr-2"></i>MONITOR EXP</h1>
-                <button onclick="toggleSidebar(event)" class="md:hidden text-gray-500 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button>
+    <div id="app" class="flex flex-col h-[100dvh] overflow-hidden relative">
+        <header class="bg-white dark:bg-gray-800 shadow p-4 flex justify-between items-center z-20 shrink-0">
+            <div class="flex items-center gap-2">
+                <h1 class="font-bold text-primary text-lg tracking-tight"><i class="fa-solid fa-boxes-stacked mr-2"></i>MONITOR EXP</h1>
             </div>
-            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                <button onclick="router('dashboard')" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center gap-3 active-nav" id="nav-dashboard"><i class="fa-solid fa-chart-pie w-6"></i> Dashboard</button>
-                <button onclick="router('input')" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center gap-3" id="nav-input"><i class="fa-solid fa-pen-to-square w-6"></i> Input Data</button>
-                <button onclick="router('all-data')" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center gap-3" id="nav-all-data"><i class="fa-solid fa-list w-6"></i> All Input Data</button>
-                <button onclick="router('rekap')" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center gap-3" id="nav-rekap"><i class="fa-solid fa-history w-6"></i> Rekap History</button>
-                <button onclick="router('produk')" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center gap-3" id="nav-produk"><i class="fa-solid fa-box-open w-6"></i> Kelola Produk</button>
-            </nav>
-            <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <div class="text-xs text-gray-400">v0.1.2026 powered by raistech.</div>
-                <button onclick="toggleDarkMode()" class="mode-toggle w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 shadow-sm border dark:border-gray-600">
-                    <i class="fa-solid fa-moon dark:hidden"></i>
-                    <i class="fa-solid fa-sun hidden dark:block"></i>
+            
+            <div class="flex items-center gap-4">
+                <button onclick="showWajibTarik()" class="notif-btn text-gray-600 dark:text-gray-300 hover:text-primary transition">
+                    <i class="fa-solid fa-bell text-xl"></i>
+                    <span id="notif-count" class="notif-badge hidden">0</span>
+                </button>
+                <button onclick="toggleDarkMode()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 flex items-center justify-center shadow-sm border dark:border-gray-600">
+                    <i class="fa-solid fa-moon dark:hidden text-xs"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-xs"></i>
                 </button>
             </div>
-        </aside>
+        </header>
 
-        <main class="flex-1 flex flex-col h-screen overflow-hidden relative w-full" id="main-content">
-            <header class="bg-white dark:bg-gray-800 shadow p-4 flex justify-between items-center z-10 sticky top-0">
-                <div class="flex items-center gap-3">
-                    <button onclick="toggleSidebar(event)" class="md:hidden text-gray-600 dark:text-gray-300"><i class="fa-solid fa-bars text-xl"></i></button>
-                    <h1 class="font-bold text-primary md:hidden">MONITOR EXP</h1>
-                    <h1 class="font-bold text-gray-700 dark:text-gray-200 hidden md:block" id="page-title">Dashboard</h1>
-                </div>
-                
-                <div class="flex items-center gap-4">
-                    <button onclick="showWajibTarik()" class="notif-btn text-gray-600 dark:text-gray-300 hover:text-primary transition">
-                        <i class="fa-solid fa-bell text-xl"></i>
-                        <span id="notif-count" class="notif-badge hidden">0</span>
-                    </button>
-                    <button onclick="toggleDarkMode()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 flex items-center justify-center md:hidden">
-                        <i class="fa-solid fa-moon dark:hidden text-xs"></i>
-                        <i class="fa-solid fa-sun hidden dark:block text-xs"></i>
-                    </button>
-                </div>
-            </header>
-
-            <div class="flex-1 overflow-y-auto p-4 md:p-8 relative" id="page-container">
+        <main class="flex-1 overflow-y-auto w-full bg-gray-50 dark:bg-gray-900" id="main-content">
+            <div class="p-4 md:p-8" id="page-container">
                 
                 <!-- DASHBOARD -->
                 <div id="page-dashboard" class="page-content space-y-6 animate-fade-in">
@@ -266,14 +243,38 @@
                             <div><label class="font-bold text-sm">Deskripsi <span class="text-red-500">*</span></label><input type="text" id="new-desc" required class="w-full p-2 border rounded dark:bg-gray-700 uppercase" oninput="this.value = this.value.toUpperCase()"></div>
                             <div><label class="font-bold text-sm">RH (Hari) <span class="text-red-500">*</span></label><input type="number" id="new-rh" required class="w-full p-2 border rounded dark:bg-gray-700"></div>
                             <button type="submit" class="w-full py-2 bg-primary text-white font-bold rounded hover:bg-blue-600">Simpan Produk</button>
-                        </form>
-                    </div>
+                    </form>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
+    </main>
 
-    <!-- MODALS -->
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 flex justify-around items-center text-[0.65rem] md:text-xs shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 pb-[env(safe-area-inset-bottom)]">
+        <button onclick="router('dashboard')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-primary dark:text-blue-400 active-nav transition-colors" id="nav-dashboard">
+            <i class="fa-solid fa-chart-pie text-lg mb-1"></i>
+            <span class="font-medium truncate">Dash</span>
+        </button>
+        <button onclick="router('input')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-input">
+            <i class="fa-solid fa-pen-to-square text-lg mb-1"></i>
+            <span class="font-medium truncate">Input</span>
+        </button>
+        <button onclick="router('all-data')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-all-data">
+            <i class="fa-solid fa-list text-lg mb-1"></i>
+            <span class="font-medium truncate">Data</span>
+        </button>
+        <button onclick="router('rekap')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-rekap">
+            <i class="fa-solid fa-history text-lg mb-1"></i>
+            <span class="font-medium truncate">Rekap</span>
+        </button>
+        <button onclick="router('produk')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-produk">
+            <i class="fa-solid fa-box-open text-lg mb-1"></i>
+            <span class="font-medium truncate">Produk</span>
+        </button>
+    </nav>
+</div>
+
+<!-- MODALS -->
     <div id="camera-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-95 flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-md bg-black rounded-lg overflow-hidden relative"><div id="reader" class="w-full" style="min-height: 300px;"></div><div class="p-4 flex justify-between items-center bg-gray-900"><button onclick="toggleTorch()" class="text-white p-2 border border-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-white hover:text-black transition"><i class="fa-solid fa-bolt"></i></button><span class="text-white text-sm font-mono">Scan Barcode</span><button onclick="closeScanner()" class="text-red-500 text-xl"><i class="fa-solid fa-times"></i></button></div></div>
     </div>
@@ -315,26 +316,18 @@
             initDashboard(); 
             
             document.getElementById('input-rak').addEventListener('input', (e) => {
-                const nik = document.getElementById('input-nik').value;
-                if(nik && e.target.value.length >= 2) {
-                    document.getElementById('input-area').classList.remove('hidden');
-                    document.getElementById('input-overlay').classList.add('hidden');
-                } else {
-                    document.getElementById('input-area').classList.add('hidden');
-                    document.getElementById('input-overlay').classList.remove('hidden');
-                }
-            });
-
-            document.addEventListener('click', (e) => {
-                const sidebar = document.getElementById('sidebar');
-                const btn = document.querySelector('[onclick="toggleSidebar(event)"]');
-                if (window.innerWidth < 768 && sidebar && !sidebar.classList.contains('hidden') && !sidebar.contains(e.target) && (!btn || !btn.contains(e.target))) {
-                    toggleSidebar();
-                }
-            });
+            const nik = document.getElementById('input-nik').value;
+            if(nik && e.target.value.length >= 2) {
+                document.getElementById('input-area').classList.remove('hidden');
+                document.getElementById('input-overlay').classList.add('hidden');
+            } else {
+                document.getElementById('input-area').classList.add('hidden');
+                document.getElementById('input-overlay').classList.remove('hidden');
+            }
         });
+    });
 
-        // --- CORE LOGIC ---
+    // --- CORE LOGIC ---
         const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
         async function initDashboard() {
@@ -493,50 +486,48 @@
         }
 
         // --- NAVIGATION ---
-        function router(p) {
-            const sb = document.getElementById('sidebar');
-            if (sb && sb.classList.contains('absolute') && !sb.classList.contains('hidden')) toggleSidebar();
-            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden')); 
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active-nav', 'bg-blue-50', 'dark:bg-gray-700', 'text-primary'));
-            const target = document.getElementById('page-'+p);
-            target.classList.remove('hidden');
-            target.classList.remove('animate-fade-in');
-            void target.offsetWidth; 
-            target.classList.add('animate-fade-in');
-            document.getElementById('nav-'+p).classList.add('active-nav', 'bg-blue-50', 'dark:bg-gray-700', 'text-primary');
-            const titles = {'dashboard': 'Dashboard', 'input': 'Input Data', 'all-data': 'Semua Data', 'rekap': 'Rekap History', 'produk': 'Kelola Produk'};
-            document.getElementById('page-title').innerText = titles[p] || 'Monitor Exp';
-
-            if(p === 'all-data') {
-                if(globalExpiredData.length > 0) renderTableData(globalExpiredData);
-                loadAllData(true); 
-            }
-            if(p === 'rekap') loadHistory(true);
-        }
-
-        function switchDashTab(tab) {
-             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-             document.getElementById('tab-' + tab).classList.add('active');
-             if(tab === 'done') {
-                 document.getElementById('view-done').classList.remove('hidden');
-                 document.getElementById('view-pending').classList.add('hidden');
-             } else {
-                 document.getElementById('view-done').classList.add('hidden');
-                 document.getElementById('view-pending').classList.remove('hidden');
-             }
-        }
-
-        function toggleSidebar(e) { 
-            if(e) e.stopPropagation(); 
-            const sb = document.getElementById('sidebar'); 
-            sb.classList.toggle('hidden'); 
-            sb.classList.toggle('absolute'); 
-            sb.classList.toggle('h-full'); 
-        }
-
-        function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
+    function router(p) {
+        document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden')); 
         
-        function resetInputForm() { 
+        document.querySelectorAll('.nav-item').forEach(el => {
+            el.classList.remove('active-nav', 'text-primary', 'dark:text-blue-400');
+            el.classList.add('text-gray-500', 'dark:text-gray-400');
+        });
+
+        const targetNav = document.getElementById('nav-'+p);
+        if(targetNav) {
+            targetNav.classList.remove('text-gray-500', 'dark:text-gray-400');
+            targetNav.classList.add('active-nav', 'text-primary', 'dark:text-blue-400');
+        }
+
+        const target = document.getElementById('page-'+p);
+        target.classList.remove('hidden');
+        target.classList.remove('animate-fade-in');
+        void target.offsetWidth; 
+        target.classList.add('animate-fade-in');
+
+        if(p === 'all-data') {
+            if(globalExpiredData.length > 0) renderTableData(globalExpiredData);
+            loadAllData(true); 
+        }
+        if(p === 'rekap') loadHistory(true);
+    }
+
+    function switchDashTab(tab) {
+         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+         document.getElementById('tab-' + tab).classList.add('active');
+         if(tab === 'done') {
+             document.getElementById('view-done').classList.remove('hidden');
+             document.getElementById('view-pending').classList.add('hidden');
+         } else {
+             document.getElementById('view-done').classList.add('hidden');
+             document.getElementById('view-pending').classList.remove('hidden');
+         }
+    }
+
+    function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
+    
+    function resetInputForm() { 
             document.getElementById('input-rak').value=''; 
             document.getElementById('input-area').classList.add('hidden'); 
             document.getElementById('input-overlay').classList.remove('hidden'); 

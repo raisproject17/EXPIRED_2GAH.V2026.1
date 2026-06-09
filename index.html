@@ -282,7 +282,7 @@
     </div>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwXRfFsSbI9GrI7AP7dapbpSuD8RnhiBLq4nH3-RGz7EoynQKZoQU5CcU5mHoI4o1xoEA/exec"; 
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyFwqBwzHTsJo8PE2IblbJsG8pbcfnGK0b7QgQ0J18dZnVmr1eR2ZQOLeyJr05qHG9yGA/exec"; 
         const MAX_ROWS = 20;
         const CACHE_RAK = 'monitor_exp_rak';
         const CACHE_EXP = 'monitor_exp_data';
@@ -703,18 +703,47 @@
         
         async function handleSubmitProduk(e) {
             e.preventDefault();
-            const data = { barcode: document.getElementById('new-code').value, plu: document.getElementById('new-plu').value, deskripsi: document.getElementById('new-desc').value.toUpperCase(), rh: document.getElementById('new-rh').value };
-            if(!data.barcode || !data.plu || !data.deskripsi || !data.rh) return showToast('warning', 'Semua kolom wajib diisi');
-            const res = await fetchAPI('addProduct', data, 'POST');
-            if(res && res.status === 'success') { 
-                Swal.fire('Sukses', 'Produk Ditambahkan', 'success'); 
-                e.target.reset(); 
-                // Auto sync tabel produk lokal agar update
-                const resProd = await fetchAPI('getAllProducts', {}, 'GET', true);
-                if(resProd?.status === 'success') {
-                    localStorage.setItem(CACHE_PROD, JSON.stringify(resProd.data));
-                    globalProducts = resProd.data;
+            const barcode = document.getElementById('new-code').value.trim();
+            const plu = document.getElementById('new-plu').value.trim();
+            const desc = document.getElementById('new-desc').value.trim().toUpperCase();
+            const rh = document.getElementById('new-rh').value;
+
+            if(!barcode || !plu || !desc || !rh) return showToast('warning', 'Semua kolom wajib diisi');
+
+            // Cek apakah produk sudah ada di database lokal
+            let existing = globalProducts.find(p => p.barcode === barcode || p.plu === plu);
+
+            const sendData = async (actionType) => {
+                const data = { barcode, plu, deskripsi: desc, rh, action_type: actionType };
+                // Memanggil endpoint baru saveProduct (yang handle Add & Update)
+                const res = await fetchAPI('saveProduct', data, 'POST');
+                if(res && res.status === 'success') { 
+                    Swal.fire('Sukses', actionType === 'update' ? 'Produk Diupdate' : 'Produk Ditambahkan', 'success'); 
+                    e.target.reset(); 
+                    // Auto sync tabel produk lokal agar update
+                    const resProd = await fetchAPI('getAllProducts', {}, 'GET', true);
+                    if(resProd?.status === 'success') {
+                        localStorage.setItem(CACHE_PROD, JSON.stringify(resProd.data));
+                        globalProducts = resProd.data;
+                    }
                 }
+            };
+
+            // Menampilkan Opsi Update jika Produk ditemukan
+            if (existing) {
+                Swal.fire({
+                    title: 'Data Sudah Ada!',
+                    text: `Produk ini sudah terdaftar (${existing.deskripsi}). Mau mengganti/update datanya?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Update',
+                    cancelButtonText: 'Tidak',
+                    confirmButtonColor: '#2563eb'
+                }).then((result) => {
+                    if (result.isConfirmed) sendData('update');
+                });
+            } else {
+                sendData('add'); // Jalur normal (Tambah baru)
             }
         }
 
@@ -732,6 +761,7 @@
             if(res?.status === 'success') {
                 showToast('success', 'Data berhasil diupdate');
                 await loadAllData(true); // Sinkronisasi tabel utama ulang
+                await loadHistory(true); // Tambahan: Update history juga karena data lama masuk history
             }
         }
         

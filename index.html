@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Expired System V4.4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { 
+                extend: { 
+                    colors: { primary: '#2563eb', dark: '#0f172a' },
+                    animation: { 'fade-in': 'fadeIn 0.2s ease-out' },
+                    keyframes: { fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } } }
+                } 
+            }
+        }
+    </script>
+    <style>
+        .status-badge { font-weight: 700; padding: 4px 8px; border-radius: 6px; display: inline-block; min-width: 40px; text-align: center;}
+        .bg-green-custom { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .bg-yellow-custom { background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+        .bg-red-custom { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .bg-black-custom { background-color: #1f2937; color: #f3f4f6; border: 1px solid #374151; }
+        input { text-transform: uppercase; }
+        
+        .min-w-input { min-width: 120px; }
+        .min-w-desc { min-width: 200px; }
+        .min-w-qty { min-width: 80px; }
+        .min-w-rh { min-width: 80px; }
+        
+        .mode-toggle { transition: all 0.3s ease; }
+        
+        .search-container { position: relative; display: flex; align-items: center; }
+        .search-input { 
+            width: 40px; padding: 8px 8px 8px 32px; border-radius: 999px; 
+            border: 1px solid transparent; background: transparent; cursor: pointer;
+            transition: width 0.4s ease, background-color 0.3s, border-color 0.3s; color: transparent;
+        }
+        .search-input:focus, .search-input:not(:placeholder-shown) { 
+            width: 180px; background: white; border-color: #cbd5e1; cursor: text; color: inherit; outline: none;
+        }
+        .dark .search-input:focus, .dark .search-input:not(:placeholder-shown) {
+            background: #1f2937; border-color: #4b5563; color: white;
+        }
+        .search-icon-overlay { position: absolute; left: 12px; pointer-events: none; color: #6b7280; transition: color 0.3s; }
+        .dark .search-icon-overlay { color: #9ca3af; }
+        .search-input:focus ~ .search-icon-overlay { color: #3b82f6; }
+
+        .notif-btn { position: relative; }
+        .notif-badge { 
+            position: absolute; top: -5px; right: -5px; 
+            background-color: #ef4444; color: white; 
+            font-size: 0.65rem; font-weight: bold; 
+            width: 18px; height: 18px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid white;
+        }
+        .dark .notif-badge { border-color: #1f2937; }
+
+        th.sortable { cursor: pointer; user-select: none; transition: background-color 0.2s; white-space: nowrap; }
+        th.sortable:hover { background-color: rgba(0,0,0,0.05); }
+        .dark th.sortable:hover { background-color: rgba(255,255,255,0.05); }
+        th.sortable i { font-size: 0.75rem; margin-left: 4px; color: #9ca3af; }
+
+        .rack-badge {
+            font-size: 0.75rem; padding: 6px 10px; border-radius: 8px; font-family: monospace; font-weight: 700; 
+            cursor: default; transition: transform 0.1s; display: inline-flex; align-items: center; gap: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 4px;
+        }
+        .rack-done { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .dark .rack-done { background-color: #064e3b; color: #d1fae5; border-color: #059669; }
+        .rack-pending { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .dark .rack-pending { background-color: #7f1d1d; color: #fecaca; border-color: #991b1b; }
+
+        .tab-btn {
+            padding: 12px 16px; border-bottom: 3px solid transparent; font-weight: 700; color: #6b7280; transition: all 0.3s; font-size: 0.9rem;
+        }
+        .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background-color: rgba(37, 99, 235, 0.05); }
+        .dark .tab-btn.active { color: #60a5fa; border-bottom-color: #60a5fa; background-color: rgba(96, 165, 250, 0.1); }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-200 font-sans">
+
+    <div id="app" class="flex h-screen overflow-hidden relative">
+        <aside class="w-64 bg-white dark:bg-gray-800 shadow-lg flex flex-col transition-all duration-300 hidden md:flex z-50 md:z-20 md:static inset-y-0 left-0" id="sidebar">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <h1 class="text-xl font-bold text-primary tracking-wider"><i class="fa-solid fa-boxes-stacked mr-2"></i>MONITOR EXP</h1>
+                <button onclick="toggleSidebar(event)" class="md:hidden text-gray-500 hover:text-red-500"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                <button onclick="router('dashboard')" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center gap-3 active-nav" id="nav-dashboard"><i class="fa-solid fa-chart-pie w-6"></i> Dashboard</button>
+                <button onclick="router('input')" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center gap-3" id="nav-input"><i class="fa-solid fa-pen-to-square w-6"></i> Input Data</button>
+                <button onclick="router('all-data')" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center gap-3" id="nav-all-data"><i class="fa-solid fa-list w-6"></i> All Input Data</button>
+                <button onclick="router('rekap')" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center gap-3" id="nav-rekap"><i class="fa-solid fa-history w-6"></i> Rekap History</button>
+                <button onclick="router('produk')" class="nav-item w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center gap-3" id="nav-produk"><i class="fa-solid fa-box-open w-6"></i> Kelola Produk</button>
+            </nav>
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <div class="text-xs text-gray-400">v0.1.2026 powered by raistech.</div>
+                <button onclick="toggleDarkMode()" class="mode-toggle w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 shadow-sm border dark:border-gray-600">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block"></i>
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-screen overflow-hidden relative w-full" id="main-content">
+            <header class="bg-white dark:bg-gray-800 shadow p-4 flex justify-between items-center z-10 sticky top-0">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar(event)" class="md:hidden text-gray-600 dark:text-gray-300"><i class="fa-solid fa-bars text-xl"></i></button>
+                    <h1 class="font-bold text-primary md:hidden">MONITOR EXP</h1>
+                    <h1 class="font-bold text-gray-700 dark:text-gray-200 hidden md:block" id="page-title">Dashboard</h1>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <button onclick="showWajibTarik()" class="notif-btn text-gray-600 dark:text-gray-300 hover:text-primary transition">
+                        <i class="fa-solid fa-bell text-xl"></i>
+                        <span id="notif-count" class="notif-badge hidden">0</span>
+                    </button>
+                    <button onclick="toggleDarkMode()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 flex items-center justify-center md:hidden">
+                        <i class="fa-solid fa-moon dark:hidden text-xs"></i>
+                        <i class="fa-solid fa-sun hidden dark:block text-xs"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-8 relative" id="page-container">
+                
+                <!-- DASHBOARD -->
+                <div id="page-dashboard" class="page-content space-y-6 animate-fade-in">
+                    <h2 class="text-2xl font-bold mb-6">Dashboard Monitoring</h2>
+                    
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex justify-between items-center">
+                            <h3 class="font-bold text-lg"><i class="fa-solid fa-list-check mr-2 text-primary"></i>Status Pengerjaan Rak</h3>
+                            <button onclick="refreshRakStatus()" class="text-blue-500 hover:text-blue-700 transition" title="Refresh Status Rak"><i class="fa-solid fa-rotate-right text-lg"></i></button>
+                        </div>
+                        <div class="flex border-b border-gray-200 dark:border-gray-700">
+                            <button onclick="switchDashTab('done')" id="tab-done" class="tab-btn active w-1/2 text-center"><i class="fa-solid fa-check-circle mr-2"></i>SUDAH DIKERJAKAN</button>
+                            <button onclick="switchDashTab('pending')" id="tab-pending" class="tab-btn w-1/2 text-center"><i class="fa-solid fa-clock mr-2"></i>BELUM DIKERJAKAN</button>
+                        </div>
+                        <div class="p-6">
+                            <div id="view-done" class="block animate-fade-in">
+                                <div class="mb-6"><h4 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b pb-1 dark:border-gray-600">Food</h4><div id="list-done-food" class="flex flex-wrap gap-2 text-sm text-gray-400 italic">...</div></div>
+                                <div><h4 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b pb-1 dark:border-gray-600">Non-Food</h4><div id="list-done-nonfood" class="flex flex-wrap gap-2 text-sm text-gray-400 italic">...</div></div>
+                            </div>
+                            <div id="view-pending" class="hidden animate-fade-in">
+                                <div class="mb-6"><h4 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b pb-1 dark:border-gray-600">Food</h4><div id="list-pending-food" class="flex flex-wrap gap-2 text-sm text-gray-400 italic">...</div></div>
+                                <div><h4 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b pb-1 dark:border-gray-600">Non-Food</h4><div id="list-pending-nonfood" class="flex flex-wrap gap-2 text-sm text-gray-400 italic">...</div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="card p-4 bg-white dark:bg-gray-800 rounded-xl shadow border-l-4 border-blue-500"><div class="text-sm text-gray-500">Total Item</div><div class="text-2xl font-bold" id="dash-total">-</div></div>
+                        <div class="card p-4 bg-white dark:bg-gray-800 rounded-xl shadow border-l-4 border-green-500"><div class="text-sm text-gray-500">Layak (>15 Hari)</div><div class="text-2xl font-bold text-green-600" id="dash-layak">-</div></div>
+                        <div class="card p-4 bg-white dark:bg-gray-800 rounded-xl shadow border-l-4 border-yellow-500"><div class="text-sm text-gray-500">Tarik (8-15 Hari)</div><div class="text-2xl font-bold text-yellow-600" id="dash-tarik">-</div></div>
+                        <div class="card p-4 bg-white dark:bg-gray-800 rounded-xl shadow border-l-4 border-red-500"><div class="text-sm text-gray-500">Retur (<7 Hari)</div><div class="text-2xl font-bold text-red-600" id="dash-retur">-</div></div>
+                    </div>
+                </div>
+
+                <!-- INPUT DATA -->
+                <div id="page-input" class="page-content hidden space-y-6 animate-fade-in">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                        <h2 class="text-xl font-bold mb-4 border-b pb-2 dark:border-gray-700">Form Input Data</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                            <div><label class="block text-xs font-bold text-gray-500 mb-1">NIK (Wajib)</label><input type="number" id="input-nik" class="w-full p-2 border rounded dark:bg-gray-700" placeholder="Isi NIK..." onchange="lookupKaryawan()"></div>
+                            <div><label class="block text-xs font-bold text-gray-500 mb-1">Nama</label><input type="text" id="input-nama" class="w-full p-2 bg-gray-100 dark:bg-gray-600 rounded" readonly></div>
+                            <div><label class="block text-xs font-bold text-gray-500 mb-1">Toko</label><input type="text" id="input-toko" class="w-full p-2 bg-gray-100 dark:bg-gray-600 rounded" readonly></div>
+                            <div><label class="block text-xs font-bold text-gray-500 mb-1">Rak (Wajib)</label><input type="text" id="input-rak" list="rak-list-options" class="w-full p-2 border rounded dark:bg-gray-700 uppercase" placeholder="Isi Rak..." oninput="this.value = this.value.toUpperCase()"><datalist id="rak-list-options"></datalist></div>
+                        </div>
+                        <div id="input-area" class="hidden">
+                            <div class="overflow-x-auto mb-4 border rounded-lg dark:border-gray-700">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="bg-gray-50 dark:bg-gray-700 uppercase font-bold text-xs whitespace-nowrap">
+                                        <tr><th class="p-2 w-8">#</th><th class="p-2 w-32">PLU/BCD*</th><th class="p-2 w-8"><i class="fa-solid fa-camera"></i></th><th class="p-2 min-w-desc">Deskripsi</th><th class="p-2 w-32">Expired*</th><th class="p-2 min-w-qty">Qty*</th><th class="p-2 min-w-rh">RH</th><th class="p-2 w-24">Tarik</th><th class="p-2 w-16 text-center">Umur</th></tr>
+                                    </thead>
+                                    <tbody id="input-tbody"></tbody>
+                                </table>
+                            </div>
+                            <div class="flex justify-end gap-3"><button onclick="resetInputForm()" class="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Reset</button><button onclick="saveBatchData()" class="px-6 py-2 bg-primary text-white rounded hover:bg-blue-600 font-bold">Simpan</button></div>
+                        </div>
+                        <div id="input-overlay" class="text-center py-10 text-gray-400 border-2 border-dashed rounded-lg"><i class="fa-solid fa-lock text-3xl mb-2"></i><p>Isi NIK dan RAK untuk membuka form</p></div>
+                    </div>
+                </div>
+
+                <!-- ALL DATA (SORTABLE) -->
+                <div id="page-all-data" class="page-content hidden space-y-6 animate-fade-in">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">All Input Data</h2>
+                            <div class="flex gap-2 items-center justify-end">
+                                <div class="search-container"><input type="text" id="search-all" onkeyup="renderTableData(globalExpiredData, this.value)" placeholder="Cari..." class="search-input dark:text-gray-100"><i class="fa-solid fa-search search-icon-overlay"></i></div>
+                                <button onclick="loadAllData(false)" class="px-3 py-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 whitespace-nowrap"><i class="fa-solid fa-sync"></i></button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto border rounded-lg dark:border-gray-700">
+                            <table class="w-full text-sm text-left" id="table-all-data">
+                                <thead class="bg-gray-50 dark:bg-gray-700 text-xs uppercase font-bold whitespace-nowrap">
+                                    <tr>
+                                        <th class="p-3 sortable" onclick="sortTable('table-all-data', 0)">NIK <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 sortable" onclick="sortTable('table-all-data', 1)">NAMA <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 sortable" onclick="sortTable('table-all-data', 2)">RAK <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 sortable" onclick="sortTable('table-all-data', 3)">BARCODE <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 sortable" onclick="sortTable('table-all-data', 4)">PLU <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 sortable" onclick="sortTable('table-all-data', 5)">DESC <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 sortable" onclick="sortTable('table-all-data', 6)">EXP <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 text-center sortable" onclick="sortTable('table-all-data', 7)">QTY <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 text-center sortable" onclick="sortTable('table-all-data', 8)">RH <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 text-center sortable" onclick="sortTable('table-all-data', 9)">UMUR <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 text-center">AKSI</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-all"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HISTORY REKAP (UPDATED WITH RH) -->
+                <div id="page-rekap" class="page-content hidden space-y-6 animate-fade-in">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">History Item Expired</h2>
+                            <div class="flex gap-2 items-center justify-end">
+                                <div class="search-container">
+                                    <input type="text" id="search-hist" onkeyup="filterTable('tbody-hist', 'search-hist')" placeholder="Cari history..." class="search-input dark:text-gray-100">
+                                    <i class="fa-solid fa-search search-icon-overlay"></i>
+                                </div>
+                                <button onclick="loadHistory(false)" class="px-3 py-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 whitespace-nowrap"><i class="fa-solid fa-sync"></i></button>
+                                <button onclick="exportToExcel('table-hist')" class="px-3 py-2 bg-green-600 text-white rounded font-bold text-xs whitespace-nowrap"><i class="fa-solid fa-file-excel mr-1"></i> XLS</button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto border rounded-lg dark:border-gray-700">
+                            <table class="w-full text-sm text-left whitespace-nowrap" id="table-hist">
+                                <thead class="bg-gray-50 dark:bg-gray-700 text-xs uppercase font-bold">
+                                    <tr>
+                                        <th class="p-3 sortable" onclick="sortTable('table-hist', 0)">Tgl Tarik <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 sortable" onclick="sortTable('table-hist', 1)">Rak <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 sortable" onclick="sortTable('table-hist', 2)">BARCODE <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 sortable" onclick="sortTable('table-hist', 3)">PLU <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 sortable" onclick="sortTable('table-hist', 4)">Desc <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 sortable" onclick="sortTable('table-hist', 5)">Tgl Exp <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 text-center sortable" onclick="sortTable('table-hist', 6)">RH <i class="fa-solid fa-sort"></i></th>
+                                        <th class="p-3 text-center sortable" onclick="sortTable('table-hist', 7)">Qty <i class="fa-solid fa-sort"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-hist"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KELOLA PRODUK -->
+                <div id="page-produk" class="page-content hidden space-y-6 animate-fade-in">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 max-w-lg mx-auto">
+                        <h2 class="text-xl font-bold mb-4">Tambah Produk Baru</h2>
+                        <form onsubmit="handleSubmitProduk(event)" class="space-y-4">
+                            <div><label class="font-bold text-sm">Barcode/PLU <span class="text-red-500">*</span></label><div class="flex gap-2"><input type="number" id="new-code" required class="flex-1 p-2 border rounded dark:bg-gray-700" placeholder="Scan/Ketik..."><button type="button" onclick="openScannerForProduct()" class="px-3 bg-gray-200 rounded hover:bg-gray-300 dark:bg-gray-600"><i class="fa-solid fa-camera"></i></button></div></div>
+                            <div><label class="font-bold text-sm">PLU (Wajib) <span class="text-red-500">*</span></label><input type="number" id="new-plu" required class="w-full p-2 border rounded dark:bg-gray-700"></div>
+                            <div><label class="font-bold text-sm">Deskripsi <span class="text-red-500">*</span></label><input type="text" id="new-desc" required class="w-full p-2 border rounded dark:bg-gray-700 uppercase" oninput="this.value = this.value.toUpperCase()"></div>
+                            <div><label class="font-bold text-sm">RH (Hari) <span class="text-red-500">*</span></label><input type="number" id="new-rh" required class="w-full p-2 border rounded dark:bg-gray-700"></div>
+                            <button type="submit" class="w-full py-2 bg-primary text-white font-bold rounded hover:bg-blue-600">Simpan Produk</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <div id="camera-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-95 flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-md bg-black rounded-lg overflow-hidden relative"><div id="reader" class="w-full" style="min-height: 300px;"></div><div class="p-4 flex justify-between items-center bg-gray-900"><button onclick="toggleTorch()" class="text-white p-2 border border-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-white hover:text-black transition"><i class="fa-solid fa-bolt"></i></button><span class="text-white text-sm font-mono">Scan Barcode</span><button onclick="closeScanner()" class="text-red-500 text-xl"><i class="fa-solid fa-times"></i></button></div></div>
+    </div>
+    <div id="edit-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-sm shadow-xl"><h3 class="font-bold text-lg mb-4">Update Data</h3><p id="edit-desc" class="text-sm text-gray-500 mb-2 font-mono"></p><label class="block text-xs font-bold text-gray-500 mb-1">Tanggal Expired</label><input type="date" id="edit-date" class="w-full p-2 border rounded dark:bg-gray-700 mb-3"><label class="block text-xs font-bold text-gray-500 mb-1">QTY</label><input type="number" id="edit-qty" class="w-full p-2 border rounded dark:bg-gray-700 mb-4" placeholder="Update Qty"><div class="flex justify-end gap-2"><button onclick="document.getElementById('edit-modal').classList.add('hidden')" class="px-4 py-2 text-gray-500">Batal</button><button onclick="saveEditExpired()" class="px-4 py-2 bg-primary text-white rounded font-bold">Simpan</button></div></div>
+    </div>
+    
+    <!-- NOTIF MODAL -->
+    <div id="notif-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl relative max-h-[80vh] flex flex-col">
+            <button onclick="document.getElementById('notif-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-times"></i></button>
+            <h3 class="font-bold text-lg mb-4 text-red-600"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Wajib Tarik / Retur</h3>
+            <div class="overflow-y-auto flex-1">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 dark:bg-gray-700 text-xs uppercase font-bold sticky top-0"><tr><th class="p-2">Rak</th><th class="p-2">Item</th><th class="p-2">Umur</th></tr></thead>
+                    <tbody id="notif-tbody"></tbody>
+                </table>
+            </div>
+            <div class="mt-4 pt-4 border-t dark:border-gray-700 text-center">
+                <button onclick="document.getElementById('notif-modal').classList.add('hidden'); router('all-data')" class="text-blue-600 text-sm font-bold hover:underline">Lihat Semua Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbx6AhaTWUCt9uz3k22KMBmqETiCRtsbwxqEKroRopOyMpYLKMmbU4n9qywdtQ8Ry41bQA/exec"; 
+        const MAX_ROWS = 20;
+        const CACHE_RAK = 'monitor_exp_rak';
+        const CACHE_EXP = 'monitor_exp_data';
+        
+        let currentActiveRow = null;
+        let html5QrcodeScanner = null;
+        let isTorchOn = false;
+        let currentEditItem = null;
+        let globalExpiredData = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            generateInputRows();
+            initDashboard(); 
+            
+            document.getElementById('input-rak').addEventListener('input', (e) => {
+                const nik = document.getElementById('input-nik').value;
+                if(nik && e.target.value.length >= 2) {
+                    document.getElementById('input-area').classList.remove('hidden');
+                    document.getElementById('input-overlay').classList.add('hidden');
+                } else {
+                    document.getElementById('input-area').classList.add('hidden');
+                    document.getElementById('input-overlay').classList.remove('hidden');
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                const sidebar = document.getElementById('sidebar');
+                const btn = document.querySelector('[onclick="toggleSidebar(event)"]');
+                if (window.innerWidth < 768 && sidebar && !sidebar.classList.contains('hidden') && !sidebar.contains(e.target) && (!btn || !btn.contains(e.target))) {
+                    toggleSidebar();
+                }
+            });
+        });
+
+        // --- CORE LOGIC ---
+        const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+        async function initDashboard() {
+            const cRak = localStorage.getItem(CACHE_RAK);
+            const cExp = localStorage.getItem(CACHE_EXP);
+            
+            if(cRak) renderRak(JSON.parse(cRak));
+            if(cExp) {
+                const data = recalculateAge(JSON.parse(cExp));
+                globalExpiredData = data;
+                renderStats(data);
+                renderTableData(data); 
+            }
+            refreshRakStatus();
+        }
+
+        async function refreshRakStatus() {
+            const [resRak, resExp] = await Promise.all([
+                fetchAPI('getRakData', {}, 'GET', true),
+                fetchAPI('getAllExpired', {}, 'GET', true)
+            ]);
+
+            if(resRak?.status === 'success') {
+                localStorage.setItem(CACHE_RAK, JSON.stringify(resRak.data));
+                renderRak(resRak.data);
+            }
+            if(resExp?.status === 'success') {
+                localStorage.setItem(CACHE_EXP, JSON.stringify(resExp.data));
+                const data = recalculateAge(resExp.data);
+                globalExpiredData = data;
+                renderStats(data);
+                renderTableData(data);
+            }
+        }
+
+        async function loadAllData(silent = true) {
+            const res = await fetchAPI('getAllExpired', {}, 'GET', silent);
+            if(res?.status === 'success') {
+                localStorage.setItem(CACHE_EXP, JSON.stringify(res.data));
+                const data = recalculateAge(res.data);
+                globalExpiredData = data;
+                renderTableData(data);
+                renderStats(data);
+            }
+        }
+
+        async function loadHistory(silent = true) {
+            const res = await fetchAPI('getHistory', {}, 'GET', silent);
+            if(res?.data) renderHistory(res.data);
+        }
+
+        // --- RENDERING ---
+        function recalculateAge(data) {
+            const today = new Date(); today.setHours(0,0,0,0);
+            return data.map(item => {
+                let realUmur = 0;
+                if(item.tarik) {
+                    const tarikDate = new Date(item.tarik);
+                    if(!isNaN(tarikDate)) realUmur = Math.ceil((tarikDate - today) / (1000 * 60 * 60 * 24));
+                }
+                return {...item, umur: realUmur};
+            });
+        }
+
+        function renderStats(data) {
+            let layak=0, tarik=0, retur=0;
+            const racksDone = new Set();
+            data.forEach(d => { 
+                const u = parseInt(d.umur); 
+                if(u > 15) layak++; else if(u >= 8) tarik++; else retur++; 
+                if(d.rak) racksDone.add(norm(d.rak));
+            });
+            document.getElementById('dash-total').innerText = data.length;
+            document.getElementById('dash-layak').innerText = layak;
+            document.getElementById('dash-tarik').innerText = tarik;
+            document.getElementById('dash-retur').innerText = retur;
+
+            const wajibTarikCount = tarik + retur;
+            const badge = document.getElementById('notif-count');
+            badge.innerText = wajibTarikCount;
+            if(wajibTarikCount > 0) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+
+            const cRak = localStorage.getItem(CACHE_RAK);
+            if(cRak) renderRackBadges(JSON.parse(cRak).food, JSON.parse(cRak).nonfood, racksDone);
+        }
+
+        function renderRackBadges(mFood, mNonFood, doneSet) {
+            const fill = (list, containerId) => {
+                const c = document.getElementById(containerId); c.innerHTML='';
+                let hasItem = false;
+                list.forEach(r => {
+                    const normalizedRak = norm(r); 
+                    const isDone = doneSet.has(normalizedRak);
+                    if ((containerId.includes('done') && isDone) || (containerId.includes('pending') && !isDone)) {
+                        hasItem = true;
+                        const b = document.createElement('span');
+                        b.className = `rack-badge ${isDone ? 'rack-done' : 'rack-pending'}`;
+                        b.innerHTML = `${isDone ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-clock"></i>'} ${r}`;
+                        c.appendChild(b);
+                    }
+                });
+                if(!hasItem) c.innerHTML = '<span class="text-xs text-gray-400 italic">Tidak ada data</span>';
+            };
+            fill(mFood, 'list-done-food'); fill(mFood, 'list-pending-food');
+            fill(mNonFood, 'list-done-nonfood'); fill(mNonFood, 'list-pending-nonfood');
+        }
+
+        function renderTableData(data, filterText = '') {
+            const tbody = document.getElementById('tbody-all');
+            if(!tbody) return;
+            
+            let filteredData = data;
+            if(filterText) {
+                const upperFilter = filterText.toUpperCase();
+                filteredData = data.filter(item => 
+                    (item.rak && item.rak.toUpperCase().includes(upperFilter)) || 
+                    (item.desc && item.desc.toUpperCase().includes(upperFilter)) || 
+                    (item.barcode && String(item.barcode).includes(upperFilter))
+                );
+            }
+
+            if(filteredData.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center">Data kosong</td></tr>'; 
+                return; 
+            }
+
+            filteredData.sort((a,b) => a.umur - b.umur);
+
+            const rowsHTML = filteredData.map(item => {
+                let u = parseInt(item.umur);
+                let badgeClass = u > 15 ? 'bg-green-custom' : u >= 8 ? 'bg-yellow-custom' : u >= 1 ? 'bg-red-custom' : 'bg-black-custom';
+                let displayDate = '-';
+                try { displayDate = new Date(item.exp).toLocaleDateString('id-ID'); } catch(e){}
+
+                return `
+                    <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td class="p-3">${item.nik}</td>
+                        <td class="p-3">${item.petugas}</td>
+                        <td class="p-3 font-mono">${item.rak}</td>
+                        <td class="p-3">${item.plu}</td>
+                        <td class="p-3">${item.barcode}</td>
+                        <td class="p-3 font-bold text-xs min-w-desc">${item.desc}</td>
+                        <td class="p-3">${displayDate}</td>
+                        <td class="p-3 text-center">${item.qty}</td>
+                        <td class="p-3 text-center">${item.rh}</td>
+                        <td class="p-3 text-center"><span class="status-badge ${badgeClass}">${item.umur} Hari</span></td>
+                        <td class="p-3 text-center flex gap-1 justify-center">
+                            <button onclick='openEditModal(${JSON.stringify(item)})' class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200 text-xs"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick='deleteItem(${JSON.stringify(item)})' class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200 text-xs"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            }).join('');
+
+            tbody.innerHTML = rowsHTML;
+        }
+
+        // --- NAVIGATION ---
+        function router(p) {
+            const sb = document.getElementById('sidebar');
+            if (sb && sb.classList.contains('absolute') && !sb.classList.contains('hidden')) toggleSidebar();
+            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden')); 
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active-nav', 'bg-blue-50', 'dark:bg-gray-700', 'text-primary'));
+            const target = document.getElementById('page-'+p);
+            target.classList.remove('hidden');
+            target.classList.remove('animate-fade-in');
+            void target.offsetWidth; 
+            target.classList.add('animate-fade-in');
+            document.getElementById('nav-'+p).classList.add('active-nav', 'bg-blue-50', 'dark:bg-gray-700', 'text-primary');
+            const titles = {'dashboard': 'Dashboard', 'input': 'Input Data', 'all-data': 'Semua Data', 'rekap': 'Rekap History', 'produk': 'Kelola Produk'};
+            document.getElementById('page-title').innerText = titles[p] || 'Monitor Exp';
+
+            if(p === 'all-data') {
+                if(globalExpiredData.length > 0) renderTableData(globalExpiredData);
+                loadAllData(true); 
+            }
+            if(p === 'rekap') loadHistory(true);
+        }
+
+        function switchDashTab(tab) {
+             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+             document.getElementById('tab-' + tab).classList.add('active');
+             if(tab === 'done') {
+                 document.getElementById('view-done').classList.remove('hidden');
+                 document.getElementById('view-pending').classList.add('hidden');
+             } else {
+                 document.getElementById('view-done').classList.add('hidden');
+                 document.getElementById('view-pending').classList.remove('hidden');
+             }
+        }
+
+        function toggleSidebar(e) { 
+            if(e) e.stopPropagation(); 
+            const sb = document.getElementById('sidebar'); 
+            sb.classList.toggle('hidden'); 
+            sb.classList.toggle('absolute'); 
+            sb.classList.toggle('h-full'); 
+        }
+
+        function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
+        
+        function resetInputForm() { 
+            document.getElementById('input-rak').value=''; 
+            document.getElementById('input-area').classList.add('hidden'); 
+            document.getElementById('input-overlay').classList.remove('hidden'); 
+            generateInputRows(); 
+        }
+
+        // --- API ---
+        async function fetchAPI(action, params = {}, method = 'GET', silent = false) {
+            if(!silent) Swal.showLoading();
+            try {
+                let url = `${GAS_API_URL}?action=${action}`;
+                let options = { method: method };
+                if (method === 'POST') options.body = JSON.stringify(params);
+                else { const query = new URLSearchParams(params).toString(); url += `&${query}`; }
+                const req = await fetch(url, options);
+                const res = await req.json();
+                if(!silent && typeof Swal !== 'undefined' && Swal.isVisible()) Swal.close();
+                return res;
+            } catch (err) {
+                if(!silent && typeof Swal !== 'undefined' && Swal.isVisible()) Swal.close();
+                console.error(err);
+                if(!silent) Swal.fire('Error', 'Gagal koneksi server', 'error');
+                return null;
+            }
+        }
+
+        // --- SUBMISSION LOGIC ---
+        async function lookupKaryawan() {
+            const nik = document.getElementById('input-nik').value;
+            if(!nik) return;
+            const res = await fetchAPI('getKaryawan', {nik});
+            if(res && res.found) {
+                document.getElementById('input-nama').value = res.data.nama;
+                document.getElementById('input-toko').value = `${res.data.kode_toko} - ${res.data.nama_toko}`;
+            } else Swal.fire('Error', 'NIK Tidak Ditemukan', 'error');
+        }
+
+        async function handleProductInput(rowIdx, code) {
+            if(!code) return;
+            document.getElementById(`desc-${rowIdx}`).value = "Loading...";
+            const res = await fetchAPI('getProduct', {code}, 'GET', true);
+            if(res && res.found) {
+                document.getElementById(`desc-${rowIdx}`).value = res.data.deskripsi;
+                document.getElementById(`rh-${rowIdx}`).value = res.data.rh;
+                document.getElementById(`real-plu-${rowIdx}`).value = res.data.plu || "";
+                document.getElementById(`real-bcd-${rowIdx}`).value = res.data.barcode || code;
+                calculateRow(rowIdx);
+            } else {
+                document.getElementById(`desc-${rowIdx}`).value = "TIDAK DITEMUKAN";
+                document.getElementById(`rh-${rowIdx}`).value = "";
+            }
+        }
+
+        function calculateRow(i) {
+            const dateStr = document.getElementById(`date-${i}`).value;
+            const rh = parseInt(document.getElementById(`rh-${i}`).value);
+            if(dateStr && rh) {
+                const exp = new Date(dateStr);
+                const tarik = new Date(exp); tarik.setDate(tarik.getDate() - rh);
+                document.getElementById(`tarik-${i}`).value = tarik.toISOString().split('T')[0];
+                const today = new Date(); today.setHours(0,0,0,0);
+                const diff = Math.ceil((tarik - today) / (86400000));
+                
+                const el = document.getElementById(`umur-${i}`);
+                el.innerText = diff;
+                el.className = 'p-2 w-16 text-center status-badge border font-bold ';
+                if(diff > 15) el.classList.add('bg-green-custom');
+                else if(diff >= 8) el.classList.add('bg-yellow-custom');
+                else el.classList.add('bg-red-custom');
+            }
+        }
+
+        async function saveBatchData() {
+            const nik = document.getElementById('input-nik').value;
+            const rak = document.getElementById('input-rak').value.toUpperCase();
+            const nama = document.getElementById('input-nama').value;
+            if(!nik || !rak || !nama) return Swal.fire('Stop', 'Data Header Belum Lengkap', 'warning');
+            
+            let entries = [];
+            let hasError = false;
+            let hasWarning = false;
+
+            for(let i=0; i<MAX_ROWS; i++) {
+                const code = document.getElementById(`code-${i}`).value;
+                const desc = document.getElementById(`desc-${i}`).value;
+                const date = document.getElementById(`date-${i}`).value;
+                const qty = document.getElementById(`qty-${i}`).value;
+                const rh = document.getElementById(`rh-${i}`).value;
+                const umur = parseInt(document.getElementById(`umur-${i}`).innerText);
+                
+                if(code || date || qty) {
+                    if(!code || !date || !qty || !rh || desc === 'TIDAK DITEMUKAN' || desc === 'Loading...') { hasError = true; break; }
+                    if(umur <= 15) hasWarning = true;
+                    entries.push({
+                        nik, petugas: nama, nomor_rak: rak,
+                        barcode: document.getElementById(`real-bcd-${i}`).value || code,
+                        plu: document.getElementById(`real-plu-${i}`).value || code,
+                        deskripsi: desc, tgl_expired: date, qty, rh,
+                        tgl_tarik: document.getElementById(`tarik-${i}`).value,
+                        umur_produk: umur
+                    });
+                }
+            }
+            
+            if(hasError) return Swal.fire('Data Tidak Lengkap', 'Lengkapi semua kolom (Produk, Expired, QTY) pada baris yang diisi.', 'error');
+            if(entries.length === 0) return Swal.fire('Kosong', 'Tidak ada data valid', 'info');
+            if(hasWarning) return Swal.fire('Gagal Simpan', 'Ada item expired <15 HARI, check kembali!', 'error');
+            
+            const res = await fetchAPI('saveExpired', entries, 'POST');
+            if(res && res.status === 'success') {
+                Swal.fire({title: 'Sukses', text: 'Data Tersimpan', icon: 'success'});
+                resetInputForm();
+                loadAllData(true);
+            }
+        }
+        
+        async function handleSubmitProduk(e) {
+            e.preventDefault();
+            const data = {
+                barcode: document.getElementById('new-code').value,
+                plu: document.getElementById('new-plu').value,
+                deskripsi: document.getElementById('new-desc').value.toUpperCase(),
+                rh: document.getElementById('new-rh').value
+            };
+            if(!data.barcode || !data.plu || !data.deskripsi || !data.rh) return Swal.fire('Gagal', 'Semua kolom wajib diisi!', 'warning');
+            const res = await fetchAPI('addProduct', data, 'POST');
+            if(res && res.status === 'success') { Swal.fire('Sukses', 'Produk Ditambahkan', 'success'); e.target.reset(); }
+        }
+
+        // --- UTILS ---
+        function sortTable(tableId, n) {
+            const table = document.getElementById(tableId);
+            let switching = true, dir = "asc", switchcount = 0;
+            while (switching) {
+                switching = false;
+                const rows = table.rows;
+                for (let i = 1; i < (rows.length - 1); i++) {
+                    let shouldSwitch = false;
+                    const x = rows[i].getElementsByTagName("TD")[n];
+                    const y = rows[i + 1].getElementsByTagName("TD")[n];
+                    let xVal = x.innerText.toLowerCase(); let yVal = y.innerText.toLowerCase();
+                    let xNum = parseFloat(xVal), yNum = parseFloat(yVal);
+                    if (!isNaN(xNum) && !isNaN(yNum)) {
+                        if (dir == "asc" && xNum > yNum) shouldSwitch = true;
+                        else if (dir == "desc" && xNum < yNum) shouldSwitch = true;
+                    } else {
+                        if (dir == "asc" && xVal > yVal) shouldSwitch = true;
+                        else if (dir == "desc" && xVal < yVal) shouldSwitch = true;
+                    }
+                    if (shouldSwitch) {
+                        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                        switching = true; switchcount++; break;
+                    }
+                }
+                if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; }
+            }
+        }
+        
+        function filterTable(tbodyId, inputId) {
+            const filter = document.getElementById(inputId).value.toUpperCase();
+            const rows = document.getElementById(tbodyId).getElementsByTagName('tr');
+            for(let row of rows) { row.style.display = row.innerText.toUpperCase().indexOf(filter) > -1 ? "" : "none"; }
+        }
+        
+        function renderHistory(data) {
+            const tb = document.getElementById('tbody-hist'); tb.innerHTML='';
+            tb.innerHTML = data.map(item => {
+                let d = item.tgl_tarik_real; try{d=new Date(d).toLocaleDateString('id-ID')}catch(e){}
+                let e = item.exp_lama; try{e=new Date(e).toLocaleDateString('id-ID')}catch(e){}
+                return `<tr class="border-b dark:border-gray-700">
+                    <td class="p-3">${d}</td>
+                    <td class="p-3">${item.rak}</td>
+                    <td class="p-3">${item.plu}</td>
+                    <td class="p-3">${item.barcode}</td>
+                    <td class="p-3">${item.desc}</td>
+                    <td class="p-3">${e}</td>
+                    <td class="p-3 text-center">${item.rh}</td>
+                    <td class="p-3 text-center">${item.qty}</td>
+                </tr>`;
+            }).join('');
+        }
+        
+        function exportToExcel(tableId) { const t = document.getElementById(tableId); XLSX.writeFile(XLSX.utils.table_to_book(t), 'Rekap_Data.xlsx'); }
+
+        function generateInputRows() {
+            const tbody = document.getElementById('input-tbody'); 
+            let rows = '';
+            for(let i=0; i<MAX_ROWS; i++) {
+                rows += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-800 border-b dark:border-gray-700">
+                    <td class="p-2 text-center">${i+1}</td>
+                    <td class="p-2"><input type="number" id="code-${i}" class="w-full min-w-input p-1 border rounded dark:bg-gray-700" onchange="handleProductInput(${i}, this.value)"><input type="hidden" id="real-plu-${i}"><input type="hidden" id="real-bcd-${i}"></td>
+                    <td class="p-2 text-center"><button onclick="openScanner(${i})" class="text-gray-500 hover:text-primary"><i class="fa-solid fa-camera"></i></button></td>
+                    <td class="p-2"><input type="text" id="desc-${i}" class="w-full min-w-desc p-1 bg-gray-100 dark:bg-gray-600 rounded text-xs" readonly></td>
+                    <td class="p-2"><input type="date" id="date-${i}" class="w-full min-w-input p-1 border rounded dark:bg-gray-700 text-sm" onchange="calculateRow(${i})"></td>
+                    <td class="p-2"><input type="number" id="qty-${i}" class="w-full min-w-qty p-1 border rounded dark:bg-gray-700 text-center"></td>
+                    <td class="p-2"><input type="text" id="rh-${i}" class="w-full min-w-rh p-1 bg-gray-100 dark:bg-gray-600 rounded text-center text-xs" readonly></td>
+                    <td class="p-2"><input type="text" id="tarik-${i}" class="w-full min-w-input p-1 bg-gray-100 dark:bg-gray-600 rounded text-center text-xs" readonly></td>
+                    <td class="p-2"><div id="umur-${i}">-</div></td></tr>`;
+            }
+            tbody.innerHTML = rows;
+        }
+        
+        function renderRak(data) {
+            const dl = document.getElementById('rak-list-options');
+            dl.innerHTML = '';
+            [...data.food, ...data.nonfood].forEach(r => {
+                const opt = document.createElement('option'); opt.value = r; dl.appendChild(opt);
+            });
+        }
+
+        // --- NOTIFICATION ---
+        function showWajibTarik() {
+            const tbody = document.getElementById('notif-tbody');
+            tbody.innerHTML = '';
+            const filtered = globalExpiredData.filter(i => parseInt(i.umur) <= 15).sort((a,b) => a.umur - b.umur);
+            if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500">Aman! Tidak ada barang wajib tarik.</td></tr>'; } 
+            else {
+                tbody.innerHTML = filtered.map(i => {
+                    let badgeClass = parseInt(i.umur) < 8 ? 'text-red-600' : 'text-yellow-600';
+                    return `<tr class="border-b dark:border-gray-700"><td class="p-2 font-mono font-bold">${i.rak}</td><td class="p-2 text-xs">${i.desc}<br><span class="text-gray-400">${i.plu}</span></td><td class="p-2 font-bold ${badgeClass}">${i.umur} Hari</td></tr>`;
+                }).join('');
+            }
+            document.getElementById('notif-modal').classList.remove('hidden');
+        }
+
+        // --- CAMERA & MODALS ---
+        async function openScanner(idx) { currentActiveRow = idx; document.getElementById('camera-modal').classList.remove('hidden'); await new Promise(r=>setTimeout(r,100)); if(html5QrcodeScanner) try{await html5QrcodeScanner.stop(); html5QrcodeScanner.clear()}catch(e){}; html5QrcodeScanner = new Html5Qrcode("reader"); try{await html5QrcodeScanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess)}catch(e){closeScanner()} }
+        async function openScannerForProduct() { currentActiveRow='NEW_PROD'; document.getElementById('camera-modal').classList.remove('hidden'); await new Promise(r=>setTimeout(r,100)); if(html5QrcodeScanner) try{await html5QrcodeScanner.stop(); html5QrcodeScanner.clear()}catch(e){}; html5QrcodeScanner = new Html5Qrcode("reader"); try{await html5QrcodeScanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess)}catch(e){closeScanner()} }
+        function onScanSuccess(t) { let c=String(t).trim(); if(c.length>1)c=c.substring(0,c.length-1); if(c.startsWith('0'))c=c.substring(1); closeScanner(); if(currentActiveRow==='NEW_PROD')document.getElementById('new-code').value=c; else{document.getElementById('code-'+currentActiveRow).value=c; handleProductInput(currentActiveRow,c);} Swal.fire({icon:'success',title:'Scanned',text:c,timer:700,showConfirmButton:false}); }
+        function closeScanner() { document.getElementById('camera-modal').classList.add('hidden'); if(html5QrcodeScanner) html5QrcodeScanner.stop().then(()=>{html5QrcodeScanner.clear()}); }
+        function toggleTorch() { if(html5QrcodeScanner) { isTorchOn=!isTorchOn; html5QrcodeScanner.applyVideoConstraints({advanced:[{torch:isTorchOn}]}).catch(()=>{isTorchOn=false}); } }
+        
+        function openEditModal(i) { currentEditItem=i; document.getElementById('edit-desc').innerText=i.desc; document.getElementById('edit-date').value=i.exp; document.getElementById('edit-qty').value=i.qty; document.getElementById('edit-modal').classList.remove('hidden'); }
+        async function saveEditExpired() { const d=document.getElementById('edit-date').value; const q=document.getElementById('edit-qty').value; if(!d||!q)return; const rh=parseInt(currentEditItem.rh); const e=new Date(d); const t=new Date(e); t.setDate(t.getDate()-rh); const u=Math.ceil((t-new Date().setHours(0,0,0,0))/86400000); const p={rowIndex:currentEditItem.rowIndex, newData:{exp:d,qty:q,tarik:t.toISOString().split('T')[0],umur:u}, oldData:currentEditItem}; await fetchAPI('updateExpired',p,'POST'); Swal.fire('Updated','','success'); document.getElementById('edit-modal').classList.add('hidden'); loadAllData(true); }
+        async function deleteItem(i) { Swal.fire({title:'Hapus?',icon:'warning',showCancelButton:true}).then(async r=>{if(r.isConfirmed){await fetchAPI('deleteExpired',{rowIndex:i.rowIndex},'POST'); Swal.fire('Deleted','','success'); loadAllData(true);}}) }
+    </script>
+</body>
+</html>

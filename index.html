@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor Expired System V4.4</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Monitor Expired System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
@@ -34,8 +34,6 @@
         .min-w-qty { min-width: 80px; }
         .min-w-rh { min-width: 80px; }
         
-        .mode-toggle { transition: all 0.3s ease; }
-        
         .search-container { position: relative; display: flex; align-items: center; }
         .search-input { 
             width: 40px; padding: 8px 8px 8px 32px; border-radius: 999px; 
@@ -61,12 +59,10 @@
             display: flex; align-items: center; justify-content: center;
             border: 2px solid white;
         }
-        .dark .notif-badge { border-color: #1f2937; }
 
         th.sortable { cursor: pointer; user-select: none; transition: background-color 0.2s; white-space: nowrap; }
         th.sortable:hover { background-color: rgba(0,0,0,0.05); }
         .dark th.sortable:hover { background-color: rgba(255,255,255,0.05); }
-        th.sortable i { font-size: 0.75rem; margin-left: 4px; color: #9ca3af; }
 
         .rack-badge {
             font-size: 0.75rem; padding: 6px 10px; border-radius: 8px; font-family: monospace; font-weight: 700; 
@@ -78,14 +74,25 @@
         .rack-pending { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
         .dark .rack-pending { background-color: #7f1d1d; color: #fecaca; border-color: #991b1b; }
 
-        .tab-btn {
-            padding: 12px 16px; border-bottom: 3px solid transparent; font-weight: 700; color: #6b7280; transition: all 0.3s; font-size: 0.9rem;
-        }
+        .tab-btn { padding: 12px 16px; border-bottom: 3px solid transparent; font-weight: 700; color: #6b7280; transition: all 0.3s; font-size: 0.9rem; }
         .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background-color: rgba(37, 99, 235, 0.05); }
         .dark .tab-btn.active { color: #60a5fa; border-bottom-color: #60a5fa; background-color: rgba(96, 165, 250, 0.1); }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-200 font-sans">
+
+    <!-- GLOBAL MODERN LOADER -->
+    <div id="loading-overlay" class="fixed inset-0 z-[999] hidden items-center justify-center bg-gray-900/40 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl flex flex-col items-center transform scale-95 transition-transform duration-300" id="loading-box">
+            <div class="relative w-16 h-16 mb-4">
+                <div class="absolute inset-0 border-4 border-blue-100 dark:border-gray-700 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
+                <i class="fa-solid fa-cloud-arrow-down absolute inset-0 flex items-center justify-center text-primary text-xl animate-pulse"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 dark:text-white" id="loading-text">Memproses...</h3>
+            <p class="text-xs text-gray-500 mt-1">Jangan tutup halaman</p>
+        </div>
+    </div>
 
     <div id="app" class="flex flex-col h-[100dvh] overflow-hidden relative">
         <header class="bg-white dark:bg-gray-800 shadow p-4 flex justify-between items-center z-20 shrink-0">
@@ -105,7 +112,7 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto w-full bg-gray-50 dark:bg-gray-900" id="main-content">
+        <main class="flex-1 overflow-y-auto w-full bg-gray-50 dark:bg-gray-900 relative" id="main-content">
             <div class="p-4 md:p-8" id="page-container">
                 
                 <!-- DASHBOARD -->
@@ -134,17 +141,21 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="card p-4 bg-white dark:bg-gray-800 rounded-xl shadow border-l-4 border-blue-500"><div class="text-sm text-gray-500">Total Item</div><div class="text-2xl font-bold" id="dash-total">-</div></div>
-                        <div class="card p-4 bg-white dark:bg-gray-800 rounded-xl shadow border-l-4 border-green-500"><div class="text-sm text-gray-500">Layak (>15 Hari)</div><div class="text-2xl font-bold text-green-600" id="dash-layak">-</div></div>
-                        <div class="card p-4 bg-white dark:bg-gray-800 rounded-xl shadow border-l-4 border-yellow-500"><div class="text-sm text-gray-500">Tarik (8-15 Hari)</div><div class="text-2xl font-bold text-yellow-600" id="dash-tarik">-</div></div>
-                        <div class="card p-4 bg-white dark:bg-gray-800 rounded-xl shadow border-l-4 border-red-500"><div class="text-sm text-gray-500">Retur (<7 Hari)</div><div class="text-2xl font-bold text-red-600" id="dash-retur">-</div></div>
+                        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow border-l-4 border-blue-500"><div class="text-sm text-gray-500">Total Item</div><div class="text-2xl font-bold" id="dash-total">-</div></div>
+                        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow border-l-4 border-green-500"><div class="text-sm text-gray-500">Layak (>15 Hari)</div><div class="text-2xl font-bold text-green-600" id="dash-layak">-</div></div>
+                        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow border-l-4 border-yellow-500"><div class="text-sm text-gray-500">Tarik (8-15 Hari)</div><div class="text-2xl font-bold text-yellow-600" id="dash-tarik">-</div></div>
+                        <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow border-l-4 border-red-500"><div class="text-sm text-gray-500">Retur (<7 Hari)</div><div class="text-2xl font-bold text-red-600" id="dash-retur">-</div></div>
                     </div>
                 </div>
 
                 <!-- INPUT DATA -->
                 <div id="page-input" class="page-content hidden space-y-6 animate-fade-in">
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 relative">
                         <h2 class="text-xl font-bold mb-4 border-b pb-2 dark:border-gray-700">Form Input Data</h2>
+                        
+                        <!-- Mini Indikator Status Local Database Produk -->
+                        <div id="product-db-status" class="absolute top-6 right-6 text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full flex items-center gap-1 animate-pulse"><i class="fa-solid fa-arrows-rotate"></i> Syncing DB</div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                             <div><label class="block text-xs font-bold text-gray-500 mb-1">NIK (Wajib)</label><input type="number" id="input-nik" class="w-full p-2 border rounded dark:bg-gray-700" placeholder="Isi NIK..." onchange="lookupKaryawan()"></div>
                             <div><label class="block text-xs font-bold text-gray-500 mb-1">Nama</label><input type="text" id="input-nama" class="w-full p-2 bg-gray-100 dark:bg-gray-600 rounded" readonly></div>
@@ -166,7 +177,7 @@
                     </div>
                 </div>
 
-                <!-- ALL DATA (SORTABLE) -->
+                <!-- ALL DATA -->
                 <div id="page-all-data" class="page-content hidden space-y-6 animate-fade-in">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                         <div class="flex justify-between items-center mb-4">
@@ -199,11 +210,11 @@
                     </div>
                 </div>
 
-                <!-- HISTORY REKAP (UPDATED WITH RH) -->
+                <!-- HISTORY REKAP -->
                 <div id="page-rekap" class="page-content hidden space-y-6 animate-fade-in">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                         <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-xl font-bold">History Item Expired</h2>
+                            <h2 class="text-xl font-bold">History Item Tarik</h2>
                             <div class="flex gap-2 items-center justify-end">
                                 <div class="search-container">
                                     <input type="text" id="search-hist" onkeyup="filterTable('tbody-hist', 'search-hist')" placeholder="Cari history..." class="search-input dark:text-gray-100">
@@ -243,157 +254,164 @@
                             <div><label class="font-bold text-sm">Deskripsi <span class="text-red-500">*</span></label><input type="text" id="new-desc" required class="w-full p-2 border rounded dark:bg-gray-700 uppercase" oninput="this.value = this.value.toUpperCase()"></div>
                             <div><label class="font-bold text-sm">RH (Hari) <span class="text-red-500">*</span></label><input type="number" id="new-rh" required class="w-full p-2 border rounded dark:bg-gray-700"></div>
                             <button type="submit" class="w-full py-2 bg-primary text-white font-bold rounded hover:bg-blue-600">Simpan Produk</button>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-    </main>
+        </main>
 
-    <!-- BOTTOM NAVIGATION -->
-    <nav class="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 flex justify-around items-center text-[0.65rem] md:text-xs shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 pb-[env(safe-area-inset-bottom)]">
-        <button onclick="router('dashboard')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-primary dark:text-blue-400 active-nav transition-colors" id="nav-dashboard">
-            <i class="fa-solid fa-chart-pie text-lg mb-1"></i>
-            <span class="font-medium truncate">Dash</span>
-        </button>
-        <button onclick="router('input')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-input">
-            <i class="fa-solid fa-pen-to-square text-lg mb-1"></i>
-            <span class="font-medium truncate">Input</span>
-        </button>
-        <button onclick="router('all-data')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-all-data">
-            <i class="fa-solid fa-list text-lg mb-1"></i>
-            <span class="font-medium truncate">Data</span>
-        </button>
-        <button onclick="router('rekap')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-rekap">
-            <i class="fa-solid fa-history text-lg mb-1"></i>
-            <span class="font-medium truncate">Rekap</span>
-        </button>
-        <button onclick="router('produk')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-produk">
-            <i class="fa-solid fa-box-open text-lg mb-1"></i>
-            <span class="font-medium truncate">Produk</span>
-        </button>
-    </nav>
-</div>
+        <!-- BOTTOM NAVIGATION -->
+        <nav class="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 flex justify-around items-center text-[0.65rem] md:text-xs shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 pb-[env(safe-area-inset-bottom)]">
+            <button onclick="router('dashboard')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-primary dark:text-blue-400 active-nav transition-colors" id="nav-dashboard"><i class="fa-solid fa-chart-pie text-lg mb-1"></i><span class="font-medium truncate">Dash</span></button>
+            <button onclick="router('input')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-input"><i class="fa-solid fa-pen-to-square text-lg mb-1"></i><span class="font-medium truncate">Input</span></button>
+            <button onclick="router('all-data')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-all-data"><i class="fa-solid fa-list text-lg mb-1"></i><span class="font-medium truncate">Data</span></button>
+            <button onclick="router('rekap')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-rekap"><i class="fa-solid fa-history text-lg mb-1"></i><span class="font-medium truncate">History</span></button>
+            <button onclick="router('produk')" class="nav-item flex-1 py-3 flex flex-col items-center justify-center text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors" id="nav-produk"><i class="fa-solid fa-box-open text-lg mb-1"></i><span class="font-medium truncate">Produk</span></button>
+        </nav>
+    </div>
 
-<!-- MODALS -->
+    <!-- MODALS -->
     <div id="camera-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-95 flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-md bg-black rounded-lg overflow-hidden relative"><div id="reader" class="w-full" style="min-height: 300px;"></div><div class="p-4 flex justify-between items-center bg-gray-900"><button onclick="toggleTorch()" class="text-white p-2 border border-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-white hover:text-black transition"><i class="fa-solid fa-bolt"></i></button><span class="text-white text-sm font-mono">Scan Barcode</span><button onclick="closeScanner()" class="text-red-500 text-xl"><i class="fa-solid fa-times"></i></button></div></div>
     </div>
     <div id="edit-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-sm shadow-xl"><h3 class="font-bold text-lg mb-4">Update Data</h3><p id="edit-desc" class="text-sm text-gray-500 mb-2 font-mono"></p><label class="block text-xs font-bold text-gray-500 mb-1">Tanggal Expired</label><input type="date" id="edit-date" class="w-full p-2 border rounded dark:bg-gray-700 mb-3"><label class="block text-xs font-bold text-gray-500 mb-1">QTY</label><input type="number" id="edit-qty" class="w-full p-2 border rounded dark:bg-gray-700 mb-4" placeholder="Update Qty"><div class="flex justify-end gap-2"><button onclick="document.getElementById('edit-modal').classList.add('hidden')" class="px-4 py-2 text-gray-500">Batal</button><button onclick="saveEditExpired()" class="px-4 py-2 bg-primary text-white rounded font-bold">Simpan</button></div></div>
     </div>
-    
-    <!-- NOTIF MODAL -->
     <div id="notif-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl relative max-h-[80vh] flex flex-col">
-            <button onclick="document.getElementById('notif-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-times"></i></button>
-            <h3 class="font-bold text-lg mb-4 text-red-600"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Wajib Tarik / Retur</h3>
-            <div class="overflow-y-auto flex-1">
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-gray-50 dark:bg-gray-700 text-xs uppercase font-bold sticky top-0"><tr><th class="p-2">Rak</th><th class="p-2">Item</th><th class="p-2">Umur</th></tr></thead>
-                    <tbody id="notif-tbody"></tbody>
-                </table>
-            </div>
-            <div class="mt-4 pt-4 border-t dark:border-gray-700 text-center">
-                <button onclick="document.getElementById('notif-modal').classList.add('hidden'); router('all-data')" class="text-blue-600 text-sm font-bold hover:underline">Lihat Semua Data</button>
-            </div>
-        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl relative max-h-[80vh] flex flex-col"><button onclick="document.getElementById('notif-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-times"></i></button><h3 class="font-bold text-lg mb-4 text-red-600"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Wajib Tarik / Retur</h3><div class="overflow-y-auto flex-1"><table class="w-full text-sm text-left"><thead class="bg-gray-50 dark:bg-gray-700 text-xs uppercase font-bold sticky top-0"><tr><th class="p-2">Rak</th><th class="p-2">Item</th><th class="p-2">Umur</th></tr></thead><tbody id="notif-tbody"></tbody></table></div><div class="mt-4 pt-4 border-t dark:border-gray-700 text-center"><button onclick="document.getElementById('notif-modal').classList.add('hidden'); router('all-data')" class="text-blue-600 text-sm font-bold hover:underline">Lihat Semua Data</button></div></div>
     </div>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwQRBz8HrkzN2d3bvQCTrSfbPVzlfYkMkpfykxUmpfu_uiJKVTr-pPrMMPN0ldbbTUdpA/exec"; 
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzHKrcY8D0_3_CsfliYG_IxC6SgCeyKC0YAJASw36U9P-ZjLJZdAcPUCUCqKuQM5DD7KQ/exec"; 
         const MAX_ROWS = 20;
         const CACHE_RAK = 'monitor_exp_rak';
         const CACHE_EXP = 'monitor_exp_data';
+        const CACHE_PROD = 'monitor_exp_products'; // Cache Database Local
         
         let currentActiveRow = null;
         let html5QrcodeScanner = null;
         let isTorchOn = false;
         let currentEditItem = null;
+        
+        // Data Local
         let globalExpiredData = [];
+        let globalProducts = [];
 
-        // --- TOAST NOTIFICATION (NOTIFIKASI KECIL) ---
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.addEventListener('mouseenter', Swal.stopTimer)
-                toast.addEventListener('mouseleave', Swal.resumeTimer)
-            }
-        });
-
-        function showToast(icon, title) {
-            Toast.fire({ icon: icon, title: title });
+        // --- MODERN GLOBAL LOADER & TOAST ---
+        function showLoader(text = 'Memproses...') {
+            const overlay = document.getElementById('loading-overlay');
+            const box = document.getElementById('loading-box');
+            document.getElementById('loading-text').innerText = text;
+            overlay.classList.remove('hidden', 'pointer-events-none');
+            void overlay.offsetWidth; // trigger CSS transition reflow
+            overlay.classList.remove('opacity-0');
+            box.classList.remove('scale-95');
         }
 
+        function hideLoader() {
+            const overlay = document.getElementById('loading-overlay');
+            const box = document.getElementById('loading-box');
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+            box.classList.add('scale-95');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        const Toast = Swal.mixin({
+            toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
+            timerProgressBar: true, didOpen: (t) => { t.addEventListener('mouseenter', Swal.stopTimer); t.addEventListener('mouseleave', Swal.resumeTimer) }
+        });
+        function showToast(icon, title) { Toast.fire({ icon: icon, title: title }); }
+
+        // --- INIT & EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
             generateInputRows();
             initDashboard(); 
             
             document.getElementById('input-rak').addEventListener('input', (e) => {
-            const nik = document.getElementById('input-nik').value;
-            if(nik && e.target.value.length >= 2) {
-                document.getElementById('input-area').classList.remove('hidden');
-                document.getElementById('input-overlay').classList.add('hidden');
-            } else {
-                document.getElementById('input-area').classList.add('hidden');
-                document.getElementById('input-overlay').classList.remove('hidden');
-            }
+                const nik = document.getElementById('input-nik').value;
+                if(nik && e.target.value.length >= 2) {
+                    document.getElementById('input-area').classList.remove('hidden');
+                    document.getElementById('input-overlay').classList.add('hidden');
+                } else {
+                    document.getElementById('input-area').classList.add('hidden');
+                    document.getElementById('input-overlay').classList.remove('hidden');
+                }
+            });
         });
-    });
 
-    // --- CORE LOGIC ---
+        // --- CORE LOGIC & BACKGROUND SYNC ---
         const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
         async function initDashboard() {
+            // Load Local Cache First (Agar Web Terasa Super Cepat)
             const cRak = localStorage.getItem(CACHE_RAK);
             const cExp = localStorage.getItem(CACHE_EXP);
+            const cProd = localStorage.getItem(CACHE_PROD);
             
             if(cRak) renderRak(JSON.parse(cRak));
+            if(cProd) {
+                globalProducts = JSON.parse(cProd);
+                document.getElementById('product-db-status').innerHTML = '<i class="fa-solid fa-check text-green-600"></i> DB Ready';
+                document.getElementById('product-db-status').classList.replace('bg-yellow-100', 'bg-green-100');
+                document.getElementById('product-db-status').classList.replace('text-yellow-700', 'text-green-700');
+                document.getElementById('product-db-status').classList.remove('animate-pulse');
+            }
             if(cExp) {
                 const data = recalculateAge(JSON.parse(cExp));
                 globalExpiredData = data;
                 renderStats(data);
                 renderTableData(data); 
             }
-            refreshRakStatus();
+            
+            // Sync background (tanpa ganggu UI)
+            backgroundSyncAll();
         }
 
-        async function refreshRakStatus() {
-            const [resRak, resExp] = await Promise.all([
+        async function backgroundSyncAll() {
+            // Kita download Produk, Rak, Expired, dan History sekaligus di belakang layar!
+            const [resRak, resExp, resProd, resHist] = await Promise.all([
                 fetchAPI('getRakData', {}, 'GET', true),
-                fetchAPI('getAllExpired', {}, 'GET', true)
+                fetchAPI('getAllExpired', {}, 'GET', true),
+                fetchAPI('getAllProducts', {}, 'GET', true),
+                fetchAPI('getHistory', {}, 'GET', true)
             ]);
 
             if(resRak?.status === 'success') {
                 localStorage.setItem(CACHE_RAK, JSON.stringify(resRak.data));
                 renderRak(resRak.data);
             }
+            if(resProd?.status === 'success') {
+                localStorage.setItem(CACHE_PROD, JSON.stringify(resProd.data));
+                globalProducts = resProd.data;
+                document.getElementById('product-db-status').innerHTML = '<i class="fa-solid fa-check text-green-600"></i> DB Ready';
+                document.getElementById('product-db-status').classList.replace('bg-yellow-100', 'bg-green-100');
+                document.getElementById('product-db-status').classList.replace('text-yellow-700', 'text-green-700');
+                document.getElementById('product-db-status').classList.remove('animate-pulse');
+            }
             if(resExp?.status === 'success') {
                 localStorage.setItem(CACHE_EXP, JSON.stringify(resExp.data));
-                const data = recalculateAge(resExp.data);
-                globalExpiredData = data;
-                renderStats(data);
-                renderTableData(data);
+                globalExpiredData = recalculateAge(resExp.data);
+                renderStats(globalExpiredData);
+                renderTableData(globalExpiredData);
+            }
+            if(resHist?.status === 'success') {
+                renderHistory(resHist.data);
             }
         }
 
-        async function loadAllData(silent = true) {
+        async function loadAllData(silent = false) {
             const res = await fetchAPI('getAllExpired', {}, 'GET', silent);
             if(res?.status === 'success') {
                 localStorage.setItem(CACHE_EXP, JSON.stringify(res.data));
-                const data = recalculateAge(res.data);
-                globalExpiredData = data;
-                renderTableData(data);
-                renderStats(data);
+                globalExpiredData = recalculateAge(res.data);
+                renderTableData(globalExpiredData);
+                renderStats(globalExpiredData);
             }
         }
 
-        async function loadHistory(silent = true) {
+        async function loadHistory(silent = false) {
             const res = await fetchAPI('getHistory', {}, 'GET', silent);
-            if(res?.data) renderHistory(res.data);
+            if(res?.status === 'success') renderHistory(res.data);
         }
 
         // --- RENDERING ---
@@ -502,97 +520,82 @@
             tbody.innerHTML = rowsHTML;
         }
 
+        function renderHistory(data) {
+            const tb = document.getElementById('tbody-hist'); tb.innerHTML='';
+            tb.innerHTML = data.map(item => {
+                let d = item.tgl_tarik_real; try{d=new Date(d).toLocaleDateString('id-ID')}catch(e){}
+                let e = item.exp_lama; try{e=new Date(e).toLocaleDateString('id-ID')}catch(e){}
+                return `<tr class="border-b dark:border-gray-700">
+                    <td class="p-3">${d}</td>
+                    <td class="p-3">${item.rak}</td>
+                    <td class="p-3">${item.plu}</td>
+                    <td class="p-3">${item.barcode}</td>
+                    <td class="p-3 text-xs font-bold">${item.desc}</td>
+                    <td class="p-3">${e}</td>
+                    <td class="p-3 text-center">${item.rh}</td>
+                    <td class="p-3 text-center">${item.qty}</td>
+                </tr>`;
+            }).join('');
+        }
+
         // --- NAVIGATION ---
-    function router(p) {
-        document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden')); 
-        
-        document.querySelectorAll('.nav-item').forEach(el => {
-            el.classList.remove('active-nav', 'text-primary', 'dark:text-blue-400');
-            el.classList.add('text-gray-500', 'dark:text-gray-400');
-        });
+        function router(p) {
+            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden')); 
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active-nav', 'text-primary', 'dark:text-blue-400');
+                el.classList.add('text-gray-500', 'dark:text-gray-400');
+            });
 
-        const targetNav = document.getElementById('nav-'+p);
-        if(targetNav) {
-            targetNav.classList.remove('text-gray-500', 'dark:text-gray-400');
-            targetNav.classList.add('active-nav', 'text-primary', 'dark:text-blue-400');
+            const targetNav = document.getElementById('nav-'+p);
+            if(targetNav) {
+                targetNav.classList.remove('text-gray-500', 'dark:text-gray-400');
+                targetNav.classList.add('active-nav', 'text-primary', 'dark:text-blue-400');
+            }
+
+            const target = document.getElementById('page-'+p);
+            target.classList.remove('hidden', 'animate-fade-in');
+            void target.offsetWidth; 
+            target.classList.add('animate-fade-in');
+
+            if(p === 'all-data' && globalExpiredData.length > 0) renderTableData(globalExpiredData);
+            if(p === 'rekap') loadHistory(true); // Always refresh local history silently when opened
         }
 
-        const target = document.getElementById('page-'+p);
-        target.classList.remove('hidden');
-        target.classList.remove('animate-fade-in');
-        void target.offsetWidth; 
-        target.classList.add('animate-fade-in');
-
-        if(p === 'all-data') {
-            if(globalExpiredData.length > 0) renderTableData(globalExpiredData);
-            loadAllData(true); 
-        }
-        if(p === 'rekap') loadHistory(true);
-    }
-
-    function switchDashTab(tab) {
-         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-         document.getElementById('tab-' + tab).classList.add('active');
-         if(tab === 'done') {
-             document.getElementById('view-done').classList.remove('hidden');
-             document.getElementById('view-pending').classList.add('hidden');
-         } else {
-             document.getElementById('view-done').classList.add('hidden');
-             document.getElementById('view-pending').classList.remove('hidden');
-         }
-    }
-
-    function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
-    
-    function resetInputForm() { 
-            document.getElementById('input-rak').value=''; 
-            document.getElementById('input-area').classList.add('hidden'); 
-            document.getElementById('input-overlay').classList.remove('hidden'); 
-            generateInputRows(); 
+        function switchDashTab(tab) {
+             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+             document.getElementById('tab-' + tab).classList.add('active');
+             if(tab === 'done') {
+                 document.getElementById('view-done').classList.remove('hidden');
+                 document.getElementById('view-pending').classList.add('hidden');
+             } else {
+                 document.getElementById('view-done').classList.add('hidden');
+                 document.getElementById('view-pending').classList.remove('hidden');
+             }
         }
 
-        // --- API & SINKRONISASI ---
+        function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
+        function resetInputForm() { document.getElementById('input-rak').value=''; document.getElementById('input-area').classList.add('hidden'); document.getElementById('input-overlay').classList.remove('hidden'); generateInputRows(); }
+
+        // --- API ---
         async function fetchAPI(action, params = {}, method = 'GET', silent = false) {
-            if(!silent) Swal.showLoading();
+            if(!silent) showLoader(); // <--- Menggunakan Loading UI Baru
             try {
-                // Tambahkan timestamp untuk mencegah browser melakukan cache pada response lama
                 let url = `${GAS_API_URL}?action=${action}&_t=${new Date().getTime()}`;
-                
-                let options = { 
-                    method: method,
-                    redirect: 'follow' // CRITICAL: Wajib untuk GAS karena sistemnya melakukan redirect (302)
-                };
-                
-                if (method === 'POST') {
-                    options.body = JSON.stringify(params);
-                    // CRITICAL: Gunakan text/plain untuk melewati pemblokiran CORS Preflight (OPTIONS request) di GAS
-                    options.headers = {
-                        "Content-Type": "text/plain;charset=utf-8"
-                    };
-                } else { 
-                    const query = new URLSearchParams(params).toString(); 
-                    if(query) url += `&${query}`; 
-                }
+                let options = { method: method, redirect: 'follow' };
+                if (method === 'POST') { options.body = JSON.stringify(params); options.headers = { "Content-Type": "text/plain;charset=utf-8" }; } 
+                else { const query = new URLSearchParams(params).toString(); if(query) url += `&${query}`; }
                 
                 const req = await fetch(url, options);
-                
                 if (!req.ok) throw new Error(`HTTP Error: ${req.status}`);
-                
                 const res = await req.json();
-                if(!silent && typeof Swal !== 'undefined' && Swal.isVisible()) Swal.close();
                 
-                // Deteksi jika server GAS membalas dengan status error secara spesifik
-                if (res && res.status === 'error') {
-                    showToast('error', res.message || 'Terjadi kesalahan data di server');
-                }
-                
+                if(!silent) hideLoader();
+                if (res && res.status === 'error') showToast('error', res.message || 'Terjadi kesalahan data');
                 return res;
             } catch (err) {
-                if(!silent && typeof Swal !== 'undefined' && Swal.isVisible()) Swal.close();
-                console.error("Fetch API Error:", err);
-                
-                // Menampilkan notifikasi kecil jika gagal sinkronisasi (CORS/Offline/Server Error)
-                showToast('error', 'Gagal sinkronisasi data');
+                if(!silent) hideLoader();
+                console.error("Fetch Error:", err);
+                if(!silent) showToast('error', 'Koneksi ke Server Gagal');
                 return null;
             }
         }
@@ -601,22 +604,34 @@
         async function lookupKaryawan() {
             const nik = document.getElementById('input-nik').value;
             if(!nik) return;
-            const res = await fetchAPI('getKaryawan', {nik});
+            const res = await fetchAPI('getKaryawan', {nik}, 'GET', false);
             if(res && res.found) {
                 document.getElementById('input-nama').value = res.data.nama;
                 document.getElementById('input-toko').value = `${res.data.kode_toko} - ${res.data.nama_toko}`;
-            } else Swal.fire('Error', 'NIK Tidak Ditemukan', 'error');
+            } else showToast('error', 'NIK Tidak Ditemukan');
         }
 
-        async function handleProductInput(rowIdx, code) {
+        // LOCAL SEARCH PRODUCT (0 Detik Delay)
+        function handleProductInput(rowIdx, code) {
             if(!code) return;
-            document.getElementById(`desc-${rowIdx}`).value = "Loading...";
-            const res = await fetchAPI('getProduct', {code}, 'GET', true);
-            if(res && res.found) {
-                document.getElementById(`desc-${rowIdx}`).value = res.data.deskripsi;
-                document.getElementById(`rh-${rowIdx}`).value = res.data.rh;
-                document.getElementById(`real-plu-${rowIdx}`).value = res.data.plu || "";
-                document.getElementById(`real-bcd-${rowIdx}`).value = res.data.barcode || code;
+            
+            let searchCode = String(code).trim().toUpperCase();
+            let cleanSearch = searchCode.replace(/^0+/, ''); 
+
+            // Cari di variabel lokal (Tidak butuh internet!)
+            let found = globalProducts.find(p => {
+                let bcd = String(p.barcode).trim().toUpperCase();
+                let plu = String(p.plu).trim().toUpperCase();
+                return bcd === searchCode || plu === searchCode || 
+                       (bcd.replace(/^0+/,'') === cleanSearch && cleanSearch !== '') || 
+                       (plu.replace(/^0+/,'') === cleanSearch && cleanSearch !== '');
+            });
+
+            if(found) {
+                document.getElementById(`desc-${rowIdx}`).value = found.deskripsi;
+                document.getElementById(`rh-${rowIdx}`).value = found.rh;
+                document.getElementById(`real-plu-${rowIdx}`).value = found.plu || "";
+                document.getElementById(`real-bcd-${rowIdx}`).value = found.barcode || code;
                 calculateRow(rowIdx);
             } else {
                 document.getElementById(`desc-${rowIdx}`).value = "TIDAK DITEMUKAN";
@@ -647,7 +662,7 @@
             const nik = document.getElementById('input-nik').value;
             const rak = document.getElementById('input-rak').value.toUpperCase();
             const nama = document.getElementById('input-nama').value;
-            if(!nik || !rak || !nama) return Swal.fire('Stop', 'Data Header Belum Lengkap', 'warning');
+            if(!nik || !rak || !nama) return showToast('warning', 'Data Karyawan & Rak Wajib Diisi');
             
             let entries = [];
             let hasError = false;
@@ -662,7 +677,7 @@
                 const umur = parseInt(document.getElementById(`umur-${i}`).innerText);
                 
                 if(code || date || qty) {
-                    if(!code || !date || !qty || !rh || desc === 'TIDAK DITEMUKAN' || desc === 'Loading...') { hasError = true; break; }
+                    if(!code || !date || !qty || !rh || desc === 'TIDAK DITEMUKAN') { hasError = true; break; }
                     if(umur <= 15) hasWarning = true;
                     entries.push({
                         nik, petugas: nama, nomor_rak: rak,
@@ -675,137 +690,115 @@
                 }
             }
             
-            if(hasError) return Swal.fire('Data Tidak Lengkap', 'Lengkapi semua kolom (Produk, Expired, QTY) pada baris yang diisi.', 'error');
-            if(entries.length === 0) return Swal.fire('Kosong', 'Tidak ada data valid', 'info');
-            if(hasWarning) return Swal.fire('Gagal Simpan', 'Ada item expired <15 HARI, check kembali!', 'error');
+            if(hasError) return showToast('error', 'Lengkapi data baris yg terisi');
+            if(entries.length === 0) return showToast('info', 'Tidak ada data valid');
             
             const res = await fetchAPI('saveExpired', entries, 'POST');
             if(res && res.status === 'success') {
-                Swal.fire({title: 'Sukses', text: 'Data Tersimpan', icon: 'success'});
+                Swal.fire({title: 'Berhasil', text: 'Data Expired Disimpan', icon: 'success'});
                 resetInputForm();
-                loadAllData(true);
+                loadAllData(true); // Auto sync tabel belakang layar
             }
         }
         
         async function handleSubmitProduk(e) {
             e.preventDefault();
-            const data = {
-                barcode: document.getElementById('new-code').value,
-                plu: document.getElementById('new-plu').value,
-                deskripsi: document.getElementById('new-desc').value.toUpperCase(),
-                rh: document.getElementById('new-rh').value
-            };
-            if(!data.barcode || !data.plu || !data.deskripsi || !data.rh) return Swal.fire('Gagal', 'Semua kolom wajib diisi!', 'warning');
+            const data = { barcode: document.getElementById('new-code').value, plu: document.getElementById('new-plu').value, deskripsi: document.getElementById('new-desc').value.toUpperCase(), rh: document.getElementById('new-rh').value };
+            if(!data.barcode || !data.plu || !data.deskripsi || !data.rh) return showToast('warning', 'Semua kolom wajib diisi');
             const res = await fetchAPI('addProduct', data, 'POST');
-            if(res && res.status === 'success') { Swal.fire('Sukses', 'Produk Ditambahkan', 'success'); e.target.reset(); }
+            if(res && res.status === 'success') { 
+                Swal.fire('Sukses', 'Produk Ditambahkan', 'success'); 
+                e.target.reset(); 
+                // Auto sync tabel produk lokal agar update
+                const resProd = await fetchAPI('getAllProducts', {}, 'GET', true);
+                if(resProd?.status === 'success') {
+                    localStorage.setItem(CACHE_PROD, JSON.stringify(resProd.data));
+                    globalProducts = resProd.data;
+                }
+            }
+        }
+
+        // --- UPDATE & DELETE FIXES (AUTO-SYNC HISTORY) ---
+        function openEditModal(i) { currentEditItem=i; document.getElementById('edit-desc').innerText=i.desc; document.getElementById('edit-date').value=i.exp; document.getElementById('edit-qty').value=i.qty; document.getElementById('edit-modal').classList.remove('hidden'); }
+        
+        async function saveEditExpired() { 
+            const d=document.getElementById('edit-date').value; const q=document.getElementById('edit-qty').value; if(!d||!q)return; 
+            const rh=parseInt(currentEditItem.rh); const e=new Date(d); const t=new Date(e); t.setDate(t.getDate()-rh); 
+            const u=Math.ceil((t-new Date().setHours(0,0,0,0))/86400000); 
+            const p={rowIndex:currentEditItem.rowIndex, newData:{exp:d,qty:q,tarik:t.toISOString().split('T')[0],umur:u}, oldData:currentEditItem}; 
+            
+            document.getElementById('edit-modal').classList.add('hidden');
+            const res = await fetchAPI('updateExpired',p,'POST'); 
+            if(res?.status === 'success') {
+                showToast('success', 'Data berhasil diupdate');
+                await loadAllData(true); // Sinkronisasi tabel utama ulang
+            }
+        }
+        
+        async function deleteItem(i) { 
+            Swal.fire({
+                title: 'Tarik Barang?', 
+                text: 'Data ini akan dihapus dari sistem & tercatat di History', 
+                icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya, Tarik!'
+            }).then(async r => {
+                if(r.isConfirmed) {
+                    const res = await fetchAPI('deleteExpired', {rowIndex: i.rowIndex}, 'POST'); 
+                    if(res?.status === 'success') {
+                        showToast('success', 'Barang berhasil ditarik');
+                        // CRITICAL FIX: Update Kedua Data Secara Bersamaan Tanpa Load Page
+                        await loadAllData(true); 
+                        await loadHistory(true); 
+                    }
+                }
+            });
         }
 
         // --- UTILS ---
-        function sortTable(tableId, n) {
-            const table = document.getElementById(tableId);
-            let switching = true, dir = "asc", switchcount = 0;
+        function sortTable(tableId, n) { /* Logic Sort Table sama */
+            const table = document.getElementById(tableId); let switching = true, dir = "asc", switchcount = 0;
             while (switching) {
-                switching = false;
-                const rows = table.rows;
+                switching = false; const rows = table.rows;
                 for (let i = 1; i < (rows.length - 1); i++) {
-                    let shouldSwitch = false;
-                    const x = rows[i].getElementsByTagName("TD")[n];
-                    const y = rows[i + 1].getElementsByTagName("TD")[n];
-                    let xVal = x.innerText.toLowerCase(); let yVal = y.innerText.toLowerCase();
-                    let xNum = parseFloat(xVal), yNum = parseFloat(yVal);
-                    if (!isNaN(xNum) && !isNaN(yNum)) {
-                        if (dir == "asc" && xNum > yNum) shouldSwitch = true;
-                        else if (dir == "desc" && xNum < yNum) shouldSwitch = true;
-                    } else {
-                        if (dir == "asc" && xVal > yVal) shouldSwitch = true;
-                        else if (dir == "desc" && xVal < yVal) shouldSwitch = true;
-                    }
-                    if (shouldSwitch) {
-                        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-                        switching = true; switchcount++; break;
-                    }
+                    let shouldSwitch = false; const x = rows[i].getElementsByTagName("TD")[n]; const y = rows[i + 1].getElementsByTagName("TD")[n];
+                    let xVal = x.innerText.toLowerCase(); let yVal = y.innerText.toLowerCase(); let xNum = parseFloat(xVal), yNum = parseFloat(yVal);
+                    if (!isNaN(xNum) && !isNaN(yNum)) { if (dir == "asc" && xNum > yNum) shouldSwitch = true; else if (dir == "desc" && xNum < yNum) shouldSwitch = true; } 
+                    else { if (dir == "asc" && xVal > yVal) shouldSwitch = true; else if (dir == "desc" && xVal < yVal) shouldSwitch = true; }
+                    if (shouldSwitch) { rows[i].parentNode.insertBefore(rows[i + 1], rows[i]); switching = true; switchcount++; break; }
                 }
                 if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; }
             }
         }
-        
-        function filterTable(tbodyId, inputId) {
-            const filter = document.getElementById(inputId).value.toUpperCase();
-            const rows = document.getElementById(tbodyId).getElementsByTagName('tr');
-            for(let row of rows) { row.style.display = row.innerText.toUpperCase().indexOf(filter) > -1 ? "" : "none"; }
-        }
-        
-        function renderHistory(data) {
-            const tb = document.getElementById('tbody-hist'); tb.innerHTML='';
-            tb.innerHTML = data.map(item => {
-                let d = item.tgl_tarik_real; try{d=new Date(d).toLocaleDateString('id-ID')}catch(e){}
-                let e = item.exp_lama; try{e=new Date(e).toLocaleDateString('id-ID')}catch(e){}
-                return `<tr class="border-b dark:border-gray-700">
-                    <td class="p-3">${d}</td>
-                    <td class="p-3">${item.rak}</td>
-                    <td class="p-3">${item.plu}</td>
-                    <td class="p-3">${item.barcode}</td>
-                    <td class="p-3">${item.desc}</td>
-                    <td class="p-3">${e}</td>
-                    <td class="p-3 text-center">${item.rh}</td>
-                    <td class="p-3 text-center">${item.qty}</td>
-                </tr>`;
-            }).join('');
-        }
-        
+        function filterTable(tbodyId, inputId) { const filter = document.getElementById(inputId).value.toUpperCase(); const rows = document.getElementById(tbodyId).getElementsByTagName('tr'); for(let row of rows) { row.style.display = row.innerText.toUpperCase().indexOf(filter) > -1 ? "" : "none"; } }
         function exportToExcel(tableId) { const t = document.getElementById(tableId); XLSX.writeFile(XLSX.utils.table_to_book(t), 'Rekap_Data.xlsx'); }
-
         function generateInputRows() {
-            const tbody = document.getElementById('input-tbody'); 
-            let rows = '';
+            const tbody = document.getElementById('input-tbody'); let rows = '';
             for(let i=0; i<MAX_ROWS; i++) {
                 rows += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-800 border-b dark:border-gray-700">
                     <td class="p-2 text-center">${i+1}</td>
-                    <td class="p-2"><input type="number" id="code-${i}" class="w-full min-w-input p-1 border rounded dark:bg-gray-700" onchange="handleProductInput(${i}, this.value)"><input type="hidden" id="real-plu-${i}"><input type="hidden" id="real-bcd-${i}"></td>
+                    <td class="p-2"><input type="number" id="code-${i}" class="w-full min-w-input p-1 border rounded dark:bg-gray-700 font-mono" onchange="handleProductInput(${i}, this.value)"><input type="hidden" id="real-plu-${i}"><input type="hidden" id="real-bcd-${i}"></td>
                     <td class="p-2 text-center"><button onclick="openScanner(${i})" class="text-gray-500 hover:text-primary"><i class="fa-solid fa-camera"></i></button></td>
-                    <td class="p-2"><input type="text" id="desc-${i}" class="w-full min-w-desc p-1 bg-gray-100 dark:bg-gray-600 rounded text-xs" readonly></td>
+                    <td class="p-2"><input type="text" id="desc-${i}" class="w-full min-w-desc p-1 bg-gray-100 dark:bg-gray-600 rounded text-xs font-bold" readonly></td>
                     <td class="p-2"><input type="date" id="date-${i}" class="w-full min-w-input p-1 border rounded dark:bg-gray-700 text-sm" onchange="calculateRow(${i})"></td>
                     <td class="p-2"><input type="number" id="qty-${i}" class="w-full min-w-qty p-1 border rounded dark:bg-gray-700 text-center"></td>
                     <td class="p-2"><input type="text" id="rh-${i}" class="w-full min-w-rh p-1 bg-gray-100 dark:bg-gray-600 rounded text-center text-xs" readonly></td>
-                    <td class="p-2"><input type="text" id="tarik-${i}" class="w-full min-w-input p-1 bg-gray-100 dark:bg-gray-600 rounded text-center text-xs" readonly></td>
+                    <td class="p-2"><input type="text" id="tarik-${i}" class="w-full min-w-input p-1 bg-gray-100 dark:bg-gray-600 rounded text-center text-xs font-bold" readonly></td>
                     <td class="p-2"><div id="umur-${i}">-</div></td></tr>`;
-            }
-            tbody.innerHTML = rows;
+            } tbody.innerHTML = rows;
         }
-        
-        function renderRak(data) {
-            const dl = document.getElementById('rak-list-options');
-            dl.innerHTML = '';
-            [...data.food, ...data.nonfood].forEach(r => {
-                const opt = document.createElement('option'); opt.value = r; dl.appendChild(opt);
-            });
-        }
-
-        // --- NOTIFICATION ---
-        function showWajibTarik() {
-            const tbody = document.getElementById('notif-tbody');
-            tbody.innerHTML = '';
-            const filtered = globalExpiredData.filter(i => parseInt(i.umur) <= 15).sort((a,b) => a.umur - b.umur);
+        function renderRak(data) { const dl = document.getElementById('rak-list-options'); dl.innerHTML = ''; [...data.food, ...data.nonfood].forEach(r => { const opt = document.createElement('option'); opt.value = r; dl.appendChild(opt); }); }
+        function showWajibTarik() { /* Sama persis */
+            const tbody = document.getElementById('notif-tbody'); tbody.innerHTML = ''; const filtered = globalExpiredData.filter(i => parseInt(i.umur) <= 15).sort((a,b) => a.umur - b.umur);
             if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500">Aman! Tidak ada barang wajib tarik.</td></tr>'; } 
-            else {
-                tbody.innerHTML = filtered.map(i => {
-                    let badgeClass = parseInt(i.umur) < 8 ? 'text-red-600' : 'text-yellow-600';
-                    return `<tr class="border-b dark:border-gray-700"><td class="p-2 font-mono font-bold">${i.rak}</td><td class="p-2 text-xs">${i.desc}<br><span class="text-gray-400">${i.plu}</span></td><td class="p-2 font-bold ${badgeClass}">${i.umur} Hari</td></tr>`;
-                }).join('');
-            }
+            else { tbody.innerHTML = filtered.map(i => { let badgeClass = parseInt(i.umur) < 8 ? 'text-red-600' : 'text-yellow-600'; return `<tr class="border-b dark:border-gray-700"><td class="p-2 font-mono font-bold">${i.rak}</td><td class="p-2 text-xs">${i.desc}<br><span class="text-gray-400">${i.plu}</span></td><td class="p-2 font-bold ${badgeClass}">${i.umur} Hari</td></tr>`; }).join(''); }
             document.getElementById('notif-modal').classList.remove('hidden');
         }
 
-        // --- CAMERA & MODALS ---
+        // --- SCANNER ---
         async function openScanner(idx) { currentActiveRow = idx; document.getElementById('camera-modal').classList.remove('hidden'); await new Promise(r=>setTimeout(r,100)); if(html5QrcodeScanner) try{await html5QrcodeScanner.stop(); html5QrcodeScanner.clear()}catch(e){}; html5QrcodeScanner = new Html5Qrcode("reader"); try{await html5QrcodeScanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess)}catch(e){closeScanner()} }
         async function openScannerForProduct() { currentActiveRow='NEW_PROD'; document.getElementById('camera-modal').classList.remove('hidden'); await new Promise(r=>setTimeout(r,100)); if(html5QrcodeScanner) try{await html5QrcodeScanner.stop(); html5QrcodeScanner.clear()}catch(e){}; html5QrcodeScanner = new Html5Qrcode("reader"); try{await html5QrcodeScanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess)}catch(e){closeScanner()} }
-        function onScanSuccess(t) { let c=String(t).trim(); if(c.length>1)c=c.substring(0,c.length-1); if(c.startsWith('0'))c=c.substring(1); closeScanner(); if(currentActiveRow==='NEW_PROD')document.getElementById('new-code').value=c; else{document.getElementById('code-'+currentActiveRow).value=c; handleProductInput(currentActiveRow,c);} Swal.fire({icon:'success',title:'Scanned',text:c,timer:700,showConfirmButton:false}); }
+        function onScanSuccess(t) { let c=String(t).trim(); if(c.length>1)c=c.substring(0,c.length-1); if(c.startsWith('0'))c=c.substring(1); closeScanner(); if(currentActiveRow==='NEW_PROD')document.getElementById('new-code').value=c; else{document.getElementById('code-'+currentActiveRow).value=c; handleProductInput(currentActiveRow,c);} showToast('success', `Scanned: ${c}`); }
         function closeScanner() { document.getElementById('camera-modal').classList.add('hidden'); if(html5QrcodeScanner) html5QrcodeScanner.stop().then(()=>{html5QrcodeScanner.clear()}); }
         function toggleTorch() { if(html5QrcodeScanner) { isTorchOn=!isTorchOn; html5QrcodeScanner.applyVideoConstraints({advanced:[{torch:isTorchOn}]}).catch(()=>{isTorchOn=false}); } }
-        
-        function openEditModal(i) { currentEditItem=i; document.getElementById('edit-desc').innerText=i.desc; document.getElementById('edit-date').value=i.exp; document.getElementById('edit-qty').value=i.qty; document.getElementById('edit-modal').classList.remove('hidden'); }
-        async function saveEditExpired() { const d=document.getElementById('edit-date').value; const q=document.getElementById('edit-qty').value; if(!d||!q)return; const rh=parseInt(currentEditItem.rh); const e=new Date(d); const t=new Date(e); t.setDate(t.getDate()-rh); const u=Math.ceil((t-new Date().setHours(0,0,0,0))/86400000); const p={rowIndex:currentEditItem.rowIndex, newData:{exp:d,qty:q,tarik:t.toISOString().split('T')[0],umur:u}, oldData:currentEditItem}; await fetchAPI('updateExpired',p,'POST'); Swal.fire('Updated','','success'); document.getElementById('edit-modal').classList.add('hidden'); loadAllData(true); }
-        async function deleteItem(i) { Swal.fire({title:'Hapus?',icon:'warning',showCancelButton:true}).then(async r=>{if(r.isConfirmed){await fetchAPI('deleteExpired',{rowIndex:i.rowIndex},'POST'); Swal.fire('Deleted','','success'); loadAllData(true);}}) }
     </script>
 </body>
 </html>

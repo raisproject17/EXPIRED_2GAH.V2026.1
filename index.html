@@ -256,6 +256,7 @@
         const CACHE_EXP = 'monitor_exp_data';
         const CACHE_PROD = 'monitor_exp_products';
         const CACHE_DRAFT = 'monitor_exp_draft'; // Cache auto-save input
+        const CACHE_HIST = 'monitor_exp_history'; // Cache untuk tabel History
         
         let currentActiveRow = null;
         let html5QrcodeScanner = null;
@@ -265,6 +266,7 @@
         
         let globalExpiredData = [];
         let globalProducts = [];
+        let globalHistoryData = []; // Clone database history di memory
 
         // --- GLOBAL LOADER & TOAST ---
         function showLoader(text = 'Memproses...') {
@@ -400,9 +402,11 @@
 
         // --- CORE LOGIC & 1-CLICK SYNC (SUPER FAST) ---
         async function initDashboard() {
+            // Load Local Cache First (Tampil Instan 0 Detik)
             const cRak = localStorage.getItem(CACHE_RAK);
             const cExp = localStorage.getItem(CACHE_EXP);
             const cProd = localStorage.getItem(CACHE_PROD);
+            const cHist = localStorage.getItem(CACHE_HIST);
             
             if(cRak) renderRak(JSON.parse(cRak));
             if(cProd) {
@@ -418,7 +422,12 @@
                 renderStats(data);
                 renderTableData(data); 
             }
-            backgroundSyncAll(); // Latar belakang
+            if(cHist) {
+                globalHistoryData = JSON.parse(cHist);
+                renderHistory(globalHistoryData);
+            }
+
+            backgroundSyncAll(); // Sinkronisasi diam-diam di latar belakang
         }
 
         async function backgroundSyncAll() {
@@ -426,7 +435,7 @@
             if(icon) icon.classList.add('fa-spin'); 
 
             try {
-                // HANYA 1 REQUEST KE SERVER GOOGLE! (Sangat Menghemat Waktu)
+                // HANYA 1 REQUEST KE SERVER GOOGLE!
                 const res = await fetchAPI('getInitialSync', {}, 'GET', true); 
 
                 if (res?.status === 'success') {
@@ -446,7 +455,11 @@
                         renderStats(globalExpiredData);
                         renderTableData(globalExpiredData);
                     }
-                    if (d.history) renderHistory(d.history);
+                    if (d.history) {
+                        localStorage.setItem(CACHE_HIST, JSON.stringify(d.history));
+                        globalHistoryData = d.history;
+                        renderHistory(globalHistoryData);
+                    }
                 }
             } finally {
                 if(icon) icon.classList.remove('fa-spin'); 
@@ -552,7 +565,10 @@
             const targetNav = document.getElementById('nav-'+p);
             if(targetNav) { targetNav.classList.remove('text-gray-500', 'dark:text-gray-400'); targetNav.classList.add('active-nav', 'text-primary', 'dark:text-blue-400'); }
             const target = document.getElementById('page-'+p); target.classList.remove('hidden', 'animate-fade-in'); void target.offsetWidth; target.classList.add('animate-fade-in');
+            
+            // Render langsung dari Clone Memory (0 Detik Delay) tanpa memanggil fetch server!
             if(p === 'all-data' && globalExpiredData.length > 0) renderTableData(globalExpiredData);
+            if(p === 'rekap' && globalHistoryData.length > 0) renderHistory(globalHistoryData); 
         }
 
         function switchDashTab(tab) {

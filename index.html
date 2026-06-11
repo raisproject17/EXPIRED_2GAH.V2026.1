@@ -273,12 +273,35 @@
         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true });
         function showToast(icon, title) { Toast.fire({ icon: icon, title: title }); }
 
-        // --- GLOBAL LOADER ---
-        function showLoader(text = 'Memproses...', subtext = 'Jangan tutup halaman') {
+        // --- GLOBAL LOADER DENGAN WAKTU MUNDUR ---
+        let loaderTimerInterval;
+        
+        function showLoader(text = 'Memproses...', subtext = 'Jangan tutup halaman', isInitialSync = false) {
             const overlay = document.getElementById('loading-overlay');
             const box = document.getElementById('loading-box');
-            document.getElementById('loading-text').innerText = text;
-            document.getElementById('loading-subtext').innerText = subtext;
+            
+            clearInterval(loaderTimerInterval); // Bersihkan timer sebelumnya
+            
+            if (isInitialSync) {
+                let timeLeft = 30; // Mulai hitung mundur 30 detik
+                document.getElementById('loading-text').innerText = `Load data master [${timeLeft}s]`;
+                document.getElementById('loading-subtext').innerText = 'Mengambil data dari server...';
+                
+                loaderTimerInterval = setInterval(() => {
+                    timeLeft--;
+                    if (timeLeft > 0) {
+                        document.getElementById('loading-text').innerText = `Load data master [${timeLeft}s]`;
+                    } else {
+                        // Jika 30 detik habis tapi server Google masih memproses
+                        document.getElementById('loading-text').innerText = `Menyelesaikan...`;
+                        clearInterval(loaderTimerInterval);
+                    }
+                }, 1000);
+            } else {
+                document.getElementById('loading-text').innerText = text;
+                document.getElementById('loading-subtext').innerText = subtext;
+            }
+
             overlay.classList.remove('hidden', 'pointer-events-none');
             void overlay.offsetWidth; 
             overlay.classList.remove('opacity-0');
@@ -286,6 +309,7 @@
         }
 
         function hideLoader() {
+            clearInterval(loaderTimerInterval);
             const overlay = document.getElementById('loading-overlay');
             const box = document.getElementById('loading-box');
             overlay.classList.add('opacity-0', 'pointer-events-none');
@@ -362,7 +386,8 @@
             // Cek jika ini adalah loading pertama kali di browser (cache kosong)
             const isFirstLoad = (!cExp || !cRak || !cProd);
             if (isFirstLoad) {
-                showLoader('Sinkronisasi Awal Database...', 'Mohon tunggu beberapa detik');
+                // TRUE akan memicu fungsi waktu mundur [30s]
+                showLoader('', '', true); 
             }
 
             if(cRak) renderRak(JSON.parse(cRak));

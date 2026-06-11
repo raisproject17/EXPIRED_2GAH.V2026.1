@@ -59,11 +59,23 @@
         .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background-color: rgba(37, 99, 235, 0.05); }
         .dark .tab-btn.active { color: #60a5fa; border-bottom-color: #60a5fa; background-color: rgba(96, 165, 250, 0.1); }
         
-        /* Loading mini pulse overlay */
         .bg-syncing { opacity: 0.5; pointer-events: none; transition: opacity 0.2s; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-200 font-sans">
+
+    <!-- GLOBAL MODERN LOADER -->
+    <div id="loading-overlay" class="fixed inset-0 z-[999] hidden items-center justify-center bg-gray-900/60 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl flex flex-col items-center transform scale-95 transition-transform duration-300" id="loading-box">
+            <div class="relative w-16 h-16 mb-4">
+                <div class="absolute inset-0 border-4 border-blue-100 dark:border-gray-700 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
+                <i class="fa-solid fa-cloud-arrow-down absolute inset-0 flex items-center justify-center text-primary text-xl animate-pulse"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 dark:text-white" id="loading-text">Memproses...</h3>
+            <p class="text-xs text-gray-500 mt-1" id="loading-subtext">Jangan tutup halaman</p>
+        </div>
+    </div>
 
     <div id="app" class="flex flex-col h-[100dvh] overflow-hidden relative">
         <header class="bg-white dark:bg-gray-800 shadow p-4 flex justify-between items-center z-20 shrink-0">
@@ -228,6 +240,7 @@
         </nav>
     </div>
 
+    <!-- MODALS -->
     <div id="camera-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-95 flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-md bg-black rounded-lg overflow-hidden relative"><div id="reader" class="w-full" style="min-height: 300px;"></div><div class="p-4 flex justify-between items-center bg-gray-900"><button onclick="toggleTorch()" class="text-white p-2 border border-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-white hover:text-black transition"><i class="fa-solid fa-bolt"></i></button><span class="text-white text-sm font-mono">Scan Barcode</span><button onclick="closeScanner()" class="text-red-500 text-xl"><i class="fa-solid fa-times"></i></button></div></div>
     </div>
@@ -259,6 +272,26 @@
 
         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true });
         function showToast(icon, title) { Toast.fire({ icon: icon, title: title }); }
+
+        // --- GLOBAL LOADER ---
+        function showLoader(text = 'Memproses...', subtext = 'Jangan tutup halaman') {
+            const overlay = document.getElementById('loading-overlay');
+            const box = document.getElementById('loading-box');
+            document.getElementById('loading-text').innerText = text;
+            document.getElementById('loading-subtext').innerText = subtext;
+            overlay.classList.remove('hidden', 'pointer-events-none');
+            void overlay.offsetWidth; 
+            overlay.classList.remove('opacity-0');
+            box.classList.remove('scale-95');
+        }
+
+        function hideLoader() {
+            const overlay = document.getElementById('loading-overlay');
+            const box = document.getElementById('loading-box');
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+            box.classList.add('scale-95');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
 
         window.addEventListener('load', () => { history.pushState({ page: 'app' }, '', window.location.href); loadDraft(); });
 
@@ -326,6 +359,12 @@
         async function initDashboard() {
             const cRak = localStorage.getItem(CACHE_RAK); const cExp = localStorage.getItem(CACHE_EXP); const cProd = localStorage.getItem(CACHE_PROD); const cHist = localStorage.getItem(CACHE_HIST);
             
+            // Cek jika ini adalah loading pertama kali di browser (cache kosong)
+            const isFirstLoad = (!cExp || !cRak || !cProd);
+            if (isFirstLoad) {
+                showLoader('Sinkronisasi Awal Database...', 'Mohon tunggu beberapa detik');
+            }
+
             if(cRak) renderRak(JSON.parse(cRak));
             if(cProd) {
                 globalProducts = JSON.parse(cProd);
@@ -335,7 +374,11 @@
             if(cExp) { globalExpiredData = recalculateAge(JSON.parse(cExp)); renderStats(globalExpiredData); renderTableData(globalExpiredData); }
             if(cHist) { globalHistoryData = JSON.parse(cHist); renderHistory(globalHistoryData); }
 
-            backgroundSyncAll(); // Lakukan sinkronisasi siluman ke Google
+            // Lakukan sinkronisasi siluman ke Google
+            await backgroundSyncAll(); 
+
+            // Jika baru pertama kali buka, hilangkan loader setelah sync selesai
+            if (isFirstLoad) hideLoader();
         }
 
         async function backgroundSyncAll() {
@@ -483,7 +526,7 @@
             } else executeReset();
         }
 
-        function executeReset() {
+        function executeReset(isOptimistic = false) {
             document.getElementById('input-rak').value=''; 
             document.getElementById('input-area').classList.add('hidden'); 
             document.getElementById('input-overlay').classList.remove('hidden'); 
@@ -515,7 +558,9 @@
         // --- SUBMISSION & DEDUPLICATION FORM ---
         async function lookupKaryawan() {
             const nik = document.getElementById('input-nik').value; if(!nik) return;
+            showLoader('Mencari Karyawan...', '');
             const res = await fetchAPI('getKaryawan', {nik}, 'GET', true);
+            hideLoader();
             if(res && res.found) { document.getElementById('input-nama').value = res.data.nama; document.getElementById('input-toko').value = `${res.data.kode_toko} - ${res.data.nama_toko}`; saveDraft(); } 
             else showToast('error', 'NIK Tidak Ditemukan');
         }
@@ -600,7 +645,7 @@
                 const rh = document.getElementById(`rh-${i}`).value; const umur = parseInt(document.getElementById(`umur-${i}`).innerText);
                 
                 if(code || date || qty) {
-                    if(!code || !date || !qty || !rh || desc === 'TIDAK DITEMUKAN' || desc === 'Mencari...') { hasError = true; break; }
+                    if(!code || !date || !qty || !rh || desc === 'TIDAK DITEMUKAN' || desc === 'Mencari...' || desc === 'GAGAL KONEKSI') { hasError = true; break; }
                     if(umur <= 15) hasWarning = true;
                     entries.push({ nik, petugas: nama, nomor_rak: rak, barcode: document.getElementById(`real-bcd-${i}`).value || code, plu: document.getElementById(`real-plu-${i}`).value || code, deskripsi: desc, tgl_expired: date, qty, rh, tgl_tarik: document.getElementById(`tarik-${i}`).value, umur_produk: umur });
                 }
@@ -613,21 +658,18 @@
             
             let ts = new Date().toISOString();
             entries.forEach(e => {
-                // Menghapus data duplikat secara lokal (meniru Google Sheet)
                 globalExpiredData = globalExpiredData.filter(item => !(item.rak === e.nomor_rak && (item.barcode === e.barcode || item.plu === e.plu || item.barcode === e.plu || item.plu === e.barcode)));
-                // Memasukkan data baru
                 globalExpiredData.push({ rowIndex: 999999, timestamp: ts, nik: e.nik, petugas: e.petugas, rak: e.nomor_rak, barcode: e.barcode, plu: e.plu, desc: e.deskripsi, exp: e.tgl_expired, qty: e.qty, rh: e.rh, tarik: e.tgl_tarik, umur: e.umur_produk });
             });
 
-            hasUnsavedData = false; localStorage.removeItem(CACHE_DRAFT);
             executeReset(true); 
-            renderTableData(globalExpiredData); // Tampil Instan!
-            router('all-data'); // Auto pindah Tab
+            renderTableData(globalExpiredData); 
+            router('all-data'); 
 
             // 2. KIRIM KE SERVER DIAM-DIAM
             const res = await fetchAPI('saveExpired', entries, 'POST', true);
             if(res && res.status === 'success') {
-                backgroundSyncAll(); // Update dengan ID Asli dari server
+                backgroundSyncAll(); 
             } else {
                 showToast('error', 'Server gagal menyimpan, tap logo sync nanti');
             }
@@ -642,8 +684,10 @@
             let existing = globalProducts.find(p => p.barcode === barcode || p.plu === plu);
 
             const sendData = async (actionType) => {
+                showLoader('Menyimpan Produk...');
                 const data = { barcode, plu, deskripsi: desc, rh, action_type: actionType };
-                const res = await fetchAPI('saveProduct', data, 'POST');
+                const res = await fetchAPI('saveProduct', data, 'POST', true);
+                hideLoader();
                 if(res && res.status === 'success') { 
                     Swal.fire('Sukses', actionType === 'update' ? 'Produk Diupdate' : 'Produk Ditambahkan', 'success'); 
                     e.target.reset(); 
@@ -652,6 +696,8 @@
                         if(idx > -1) globalProducts[idx] = {barcode, plu, deskripsi: desc, rh};
                     } else { globalProducts.push({barcode, plu, deskripsi: desc, rh}); }
                     localStorage.setItem(CACHE_PROD, JSON.stringify(globalProducts));
+                } else {
+                    showToast('error', 'Gagal menyimpan produk');
                 }
             };
 

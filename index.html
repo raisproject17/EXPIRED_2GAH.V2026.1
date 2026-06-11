@@ -58,22 +58,12 @@
         .tab-btn { padding: 12px 16px; border-bottom: 3px solid transparent; font-weight: 700; color: #6b7280; transition: all 0.3s; font-size: 0.9rem; }
         .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background-color: rgba(37, 99, 235, 0.05); }
         .dark .tab-btn.active { color: #60a5fa; border-bottom-color: #60a5fa; background-color: rgba(96, 165, 250, 0.1); }
+        
+        /* Loading mini pulse overlay */
+        .bg-syncing { opacity: 0.5; pointer-events: none; transition: opacity 0.2s; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-200 font-sans">
-
-    <!-- GLOBAL MODERN LOADER -->
-    <div id="loading-overlay" class="fixed inset-0 z-[999] hidden items-center justify-center bg-gray-900/40 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl flex flex-col items-center transform scale-95 transition-transform duration-300" id="loading-box">
-            <div class="relative w-16 h-16 mb-4">
-                <div class="absolute inset-0 border-4 border-blue-100 dark:border-gray-700 rounded-full"></div>
-                <div class="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
-                <i class="fa-solid fa-cloud-arrow-down absolute inset-0 flex items-center justify-center text-primary text-xl animate-pulse"></i>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800 dark:text-white" id="loading-text">Memproses...</h3>
-            <p class="text-xs text-gray-500 mt-1">Jangan tutup halaman</p>
-        </div>
-    </div>
 
     <div id="app" class="flex flex-col h-[100dvh] overflow-hidden relative">
         <header class="bg-white dark:bg-gray-800 shadow p-4 flex justify-between items-center z-20 shrink-0">
@@ -99,7 +89,7 @@
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
                         <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex justify-between items-center">
                             <h3 class="font-bold text-lg"><i class="fa-solid fa-list-check mr-2 text-primary"></i>Status Pengerjaan Rak</h3>
-                            <button onclick="refreshRakStatus()" class="text-blue-500 hover:text-blue-700 transition" title="Refresh Status Rak"><i id="sync-icon-dash" class="fa-solid fa-rotate-right text-lg"></i></button>
+                            <button onclick="backgroundSyncAllWithToast()" class="text-blue-500 hover:text-blue-700 transition" title="Refresh Database"><i id="sync-icon-dash" class="fa-solid fa-rotate-right text-lg"></i></button>
                         </div>
                         <div class="flex border-b border-gray-200 dark:border-gray-700">
                             <button onclick="switchDashTab('done')" id="tab-done" class="tab-btn active w-1/2 text-center"><i class="fa-solid fa-check-circle mr-2"></i>SUDAH DIKERJAKAN</button>
@@ -158,10 +148,10 @@
                             <h2 class="text-xl font-bold">All Input Data</h2>
                             <div class="flex gap-2 items-center justify-end">
                                 <div class="search-container"><input type="text" id="search-all" onkeyup="renderTableData(globalExpiredData, this.value)" placeholder="Cari..." class="search-input dark:text-gray-100"><i class="fa-solid fa-search search-icon-overlay"></i></div>
-                                <button onclick="backgroundSyncAllWithLoader()" class="px-3 py-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 whitespace-nowrap"><i class="fa-solid fa-sync"></i></button>
+                                <button onclick="backgroundSyncAllWithToast()" class="px-3 py-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 whitespace-nowrap"><i id="sync-icon-data" class="fa-solid fa-sync"></i></button>
                             </div>
                         </div>
-                        <div class="overflow-x-auto border rounded-lg dark:border-gray-700">
+                        <div class="overflow-x-auto border rounded-lg dark:border-gray-700 relative" id="table-data-wrapper">
                             <table class="w-full text-sm text-left" id="table-all-data">
                                 <thead class="bg-gray-50 dark:bg-gray-700 text-xs uppercase font-bold whitespace-nowrap">
                                     <tr>
@@ -190,11 +180,11 @@
                             <h2 class="text-xl font-bold">History Item Tarik</h2>
                             <div class="flex gap-2 items-center justify-end">
                                 <div class="search-container"><input type="text" id="search-hist" onkeyup="filterTable('tbody-hist', 'search-hist')" placeholder="Cari history..." class="search-input dark:text-gray-100"><i class="fa-solid fa-search search-icon-overlay"></i></div>
-                                <button onclick="backgroundSyncAllWithLoader()" class="px-3 py-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 whitespace-nowrap"><i class="fa-solid fa-sync"></i></button>
+                                <button onclick="backgroundSyncAllWithToast()" class="px-3 py-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 whitespace-nowrap"><i id="sync-icon-hist" class="fa-solid fa-sync"></i></button>
                                 <button onclick="exportToExcel('table-hist')" class="px-3 py-2 bg-green-600 text-white rounded font-bold text-xs whitespace-nowrap"><i class="fa-solid fa-file-excel mr-1"></i> XLS</button>
                             </div>
                         </div>
-                        <div class="overflow-x-auto border rounded-lg dark:border-gray-700">
+                        <div class="overflow-x-auto border rounded-lg dark:border-gray-700 relative" id="table-hist-wrapper">
                             <table class="w-full text-sm text-left whitespace-nowrap" id="table-hist">
                                 <thead class="bg-gray-50 dark:bg-gray-700 text-xs uppercase font-bold">
                                     <tr>
@@ -238,7 +228,6 @@
         </nav>
     </div>
 
-    <!-- MODALS -->
     <div id="camera-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-95 flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-md bg-black rounded-lg overflow-hidden relative"><div id="reader" class="w-full" style="min-height: 300px;"></div><div class="p-4 flex justify-between items-center bg-gray-900"><button onclick="toggleTorch()" class="text-white p-2 border border-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-white hover:text-black transition"><i class="fa-solid fa-bolt"></i></button><span class="text-white text-sm font-mono">Scan Barcode</span><button onclick="closeScanner()" class="text-red-500 text-xl"><i class="fa-solid fa-times"></i></button></div></div>
     </div>
@@ -250,76 +239,38 @@
     </div>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxnKT3ysrn_Hqk7iC0kysZVOJTHzeBjPO8WnID_SNTKoor2hw6gz7HyH-ZVhs5532AywA/exec"; 
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwGEiqcYqK2V4fZPkdDbvgdniO7FLj0MOa2TiKA8Ssdst-_KJqHtHu-nsHoOveQZC0M0w/exec"; 
         const MAX_ROWS = 20;
         const CACHE_RAK = 'monitor_exp_rak';
         const CACHE_EXP = 'monitor_exp_data';
         const CACHE_PROD = 'monitor_exp_products';
-        const CACHE_DRAFT = 'monitor_exp_draft'; // Cache auto-save input
-        const CACHE_HIST = 'monitor_exp_history'; // Cache untuk tabel History
+        const CACHE_DRAFT = 'monitor_exp_draft'; 
+        const CACHE_HIST = 'monitor_exp_history';
         
         let currentActiveRow = null;
         let html5QrcodeScanner = null;
         let isTorchOn = false;
         let currentEditItem = null;
-        let hasUnsavedData = false; // Flag status data input
+        let hasUnsavedData = false; 
         
         let globalExpiredData = [];
         let globalProducts = [];
-        let globalHistoryData = []; // Clone database history di memory
+        let globalHistoryData = []; 
 
-        // --- GLOBAL LOADER & TOAST ---
-        function showLoader(text = 'Memproses...') {
-            const overlay = document.getElementById('loading-overlay');
-            const box = document.getElementById('loading-box');
-            document.getElementById('loading-text').innerText = text;
-            overlay.classList.remove('hidden', 'pointer-events-none');
-            void overlay.offsetWidth; 
-            overlay.classList.remove('opacity-0');
-            box.classList.remove('scale-95');
-        }
-
-        function hideLoader() {
-            const overlay = document.getElementById('loading-overlay');
-            const box = document.getElementById('loading-box');
-            overlay.classList.add('opacity-0', 'pointer-events-none');
-            box.classList.add('scale-95');
-            setTimeout(() => overlay.classList.add('hidden'), 300);
-        }
-
-        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
+        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true });
         function showToast(icon, title) { Toast.fire({ icon: icon, title: title }); }
 
-        // --- INIT & ANTI-BACK TRAP ---
-        window.addEventListener('load', () => {
-            history.pushState({ page: 'app' }, '', window.location.href);
-            loadDraft(); 
-        });
+        window.addEventListener('load', () => { history.pushState({ page: 'app' }, '', window.location.href); loadDraft(); });
 
         window.addEventListener('popstate', function (event) {
             if (hasUnsavedData) {
-                history.pushState({ page: 'app' }, '', window.location.href); // trap
-                Swal.fire({
-                    title: 'Simpan Data Input?',
-                    text: 'Ada data input yang belum tersimpan!',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    showDenyButton: true,
-                    confirmButtonText: '<i class="fa-solid fa-save"></i> Ya, Simpan',
-                    denyButtonText: '<i class="fa-solid fa-trash"></i> Buang Data',
-                    cancelButtonText: 'Batal Keluar',
-                    confirmButtonColor: '#2563eb',
-                    denyButtonColor: '#d33'
-                }).then((result) => {
-                    if (result.isConfirmed) saveBatchData();
-                    else if (result.isDenied) { executeReset(); history.back(); }
-                });
+                history.pushState({ page: 'app' }, '', window.location.href); 
+                Swal.fire({ title: 'Simpan Data Input?', text: 'Ada data input yang belum tersimpan!', icon: 'warning', showCancelButton: true, showDenyButton: true, confirmButtonText: '<i class="fa-solid fa-save"></i> Ya, Simpan', denyButtonText: '<i class="fa-solid fa-trash"></i> Buang Data', cancelButtonText: 'Batal Keluar', confirmButtonColor: '#2563eb', denyButtonColor: '#d33' })
+                .then((result) => { if (result.isConfirmed) saveBatchData(); else if (result.isDenied) { executeReset(); history.back(); } });
             }
         });
 
-        window.addEventListener('beforeunload', function (e) {
-            if (hasUnsavedData) { e.preventDefault(); e.returnValue = ''; }
-        });
+        window.addEventListener('beforeunload', function (e) { if (hasUnsavedData) { e.preventDefault(); e.returnValue = ''; } });
 
         document.addEventListener('DOMContentLoaded', () => {
             generateInputRows();
@@ -328,39 +279,25 @@
             document.getElementById('input-rak').addEventListener('input', (e) => {
                 const nik = document.getElementById('input-nik').value;
                 if(nik && e.target.value.length >= 2) {
-                    document.getElementById('input-area').classList.remove('hidden');
-                    document.getElementById('input-overlay').classList.add('hidden');
-                } else {
-                    document.getElementById('input-area').classList.add('hidden');
-                    document.getElementById('input-overlay').classList.remove('hidden');
-                }
+                    document.getElementById('input-area').classList.remove('hidden'); document.getElementById('input-overlay').classList.add('hidden');
+                } else { document.getElementById('input-area').classList.add('hidden'); document.getElementById('input-overlay').classList.remove('hidden'); }
                 saveDraft();
             });
 
             document.getElementById('input-nik').addEventListener('input', saveDraft);
         });
 
-        // --- AUTO-SAVE DRAFT LOGIC ---
+        // --- DRAFT CACHE ---
         function saveDraft() {
-            const nik = document.getElementById('input-nik').value;
-            const nama = document.getElementById('input-nama').value;
-            const toko = document.getElementById('input-toko').value;
-            const rak = document.getElementById('input-rak').value;
-            let rows = [];
-            let hasData = false;
-            
+            const nik = document.getElementById('input-nik').value; const nama = document.getElementById('input-nama').value;
+            const toko = document.getElementById('input-toko').value; const rak = document.getElementById('input-rak').value;
+            let rows = []; let hasData = false;
             for(let i=0; i<MAX_ROWS; i++) {
-                let code = document.getElementById(`code-${i}`)?.value || '';
-                let date = document.getElementById(`date-${i}`)?.value || '';
-                let qty = document.getElementById(`qty-${i}`)?.value || '';
-                rows.push({ code, date, qty });
-                if (code || date || qty) hasData = true;
+                let code = document.getElementById(`code-${i}`)?.value || ''; let date = document.getElementById(`date-${i}`)?.value || ''; let qty = document.getElementById(`qty-${i}`)?.value || '';
+                rows.push({ code, date, qty }); if (code || date || qty) hasData = true;
             }
-            
             hasUnsavedData = hasData || rak !== ''; 
-            
-            if (hasUnsavedData) localStorage.setItem(CACHE_DRAFT, JSON.stringify({nik, nama, toko, rak, rows}));
-            else localStorage.removeItem(CACHE_DRAFT);
+            if (hasUnsavedData) localStorage.setItem(CACHE_DRAFT, JSON.stringify({nik, nama, toko, rak, rows})); else localStorage.removeItem(CACHE_DRAFT);
         }
 
         function loadDraft() {
@@ -368,114 +305,75 @@
             if(draftStr) {
                 try {
                     const draft = JSON.parse(draftStr);
-                    if(draft.nik) {
-                        document.getElementById('input-nik').value = draft.nik;
-                        if(draft.nama) document.getElementById('input-nama').value = draft.nama;
-                        if(draft.toko) document.getElementById('input-toko').value = draft.toko;
-                    }
-                    if(draft.rak) {
-                        document.getElementById('input-rak').value = draft.rak;
-                        document.getElementById('input-area').classList.remove('hidden');
-                        document.getElementById('input-overlay').classList.add('hidden');
-                    }
+                    if(draft.nik) { document.getElementById('input-nik').value = draft.nik; if(draft.nama) document.getElementById('input-nama').value = draft.nama; if(draft.toko) document.getElementById('input-toko').value = draft.toko; }
+                    if(draft.rak) { document.getElementById('input-rak').value = draft.rak; document.getElementById('input-area').classList.remove('hidden'); document.getElementById('input-overlay').classList.add('hidden'); }
                     for(let i=0; i<MAX_ROWS; i++) {
                         if(draft.rows[i]) {
-                            if(draft.rows[i].code) {
-                                document.getElementById(`code-${i}`).value = draft.rows[i].code;
-                                handleProductInput(i, draft.rows[i].code, true);
-                            }
+                            if(draft.rows[i].code) { document.getElementById(`code-${i}`).value = draft.rows[i].code; handleProductInput(i, draft.rows[i].code, true); }
                             if(draft.rows[i].date) document.getElementById(`date-${i}`).value = draft.rows[i].date;
                             if(draft.rows[i].qty) document.getElementById(`qty-${i}`).value = draft.rows[i].qty;
                             if(draft.rows[i].date && draft.rows[i].code) calculateRow(i, true);
                         }
                     }
-                    if(draft.rak || draft.rows.some(r => r.code || r.date || r.qty)) {
-                        hasUnsavedData = true;
-                        showToast('info', 'Draft dipulihkan');
-                        router('input'); 
-                    }
+                    if(draft.rak || draft.rows.some(r => r.code || r.date || r.qty)) { hasUnsavedData = true; showToast('info', 'Draft dipulihkan'); router('input'); }
                 } catch(e) {}
             }
         }
 
         const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-        // --- CORE LOGIC & 1-CLICK SYNC (SUPER FAST) ---
+        // --- CORE LOGIC (0 DETIK LOADING UI) ---
         async function initDashboard() {
-            // Load Local Cache First (Tampil Instan 0 Detik)
-            const cRak = localStorage.getItem(CACHE_RAK);
-            const cExp = localStorage.getItem(CACHE_EXP);
-            const cProd = localStorage.getItem(CACHE_PROD);
-            const cHist = localStorage.getItem(CACHE_HIST);
+            const cRak = localStorage.getItem(CACHE_RAK); const cExp = localStorage.getItem(CACHE_EXP); const cProd = localStorage.getItem(CACHE_PROD); const cHist = localStorage.getItem(CACHE_HIST);
             
             if(cRak) renderRak(JSON.parse(cRak));
             if(cProd) {
                 globalProducts = JSON.parse(cProd);
                 document.getElementById('product-db-status').innerHTML = '<i class="fa-solid fa-check text-green-600"></i> DB Ready';
-                document.getElementById('product-db-status').classList.replace('bg-yellow-100', 'bg-green-100');
-                document.getElementById('product-db-status').classList.replace('text-yellow-700', 'text-green-700');
-                document.getElementById('product-db-status').classList.remove('animate-pulse');
+                document.getElementById('product-db-status').classList.replace('bg-yellow-100', 'bg-green-100'); document.getElementById('product-db-status').classList.replace('text-yellow-700', 'text-green-700'); document.getElementById('product-db-status').classList.remove('animate-pulse');
             }
-            if(cExp) {
-                const data = recalculateAge(JSON.parse(cExp));
-                globalExpiredData = data;
-                renderStats(data);
-                renderTableData(data); 
-            }
-            if(cHist) {
-                globalHistoryData = JSON.parse(cHist);
-                renderHistory(globalHistoryData);
-            }
+            if(cExp) { globalExpiredData = recalculateAge(JSON.parse(cExp)); renderStats(globalExpiredData); renderTableData(globalExpiredData); }
+            if(cHist) { globalHistoryData = JSON.parse(cHist); renderHistory(globalHistoryData); }
 
-            backgroundSyncAll(); // Sinkronisasi diam-diam di latar belakang
+            backgroundSyncAll(); // Lakukan sinkronisasi siluman ke Google
         }
 
         async function backgroundSyncAll() {
-            const icon = document.getElementById('sync-icon-dash');
-            if(icon) icon.classList.add('fa-spin'); 
+            // Animasi icon putar
+            document.querySelectorAll('.fa-sync, .fa-rotate-right').forEach(i => i.classList.add('fa-spin'));
+            const tb1 = document.getElementById('table-data-wrapper'); const tb2 = document.getElementById('table-hist-wrapper');
+            if(tb1) tb1.classList.add('bg-syncing'); if(tb2) tb2.classList.add('bg-syncing');
 
             try {
-                // HANYA 1 REQUEST KE SERVER GOOGLE!
+                // 1 Hit All Data = Cepat!
                 const res = await fetchAPI('getInitialSync', {}, 'GET', true); 
 
                 if (res?.status === 'success') {
                     const d = res.data;
                     if (d.rak) { localStorage.setItem(CACHE_RAK, JSON.stringify(d.rak)); renderRak(d.rak); }
                     if (d.products) {
-                        localStorage.setItem(CACHE_PROD, JSON.stringify(d.products));
-                        globalProducts = d.products;
-                        document.getElementById('product-db-status').innerHTML = '<i class="fa-solid fa-check text-green-600"></i> DB Ready';
-                        document.getElementById('product-db-status').classList.replace('bg-yellow-100', 'bg-green-100');
-                        document.getElementById('product-db-status').classList.replace('text-yellow-700', 'text-green-700');
-                        document.getElementById('product-db-status').classList.remove('animate-pulse');
+                        localStorage.setItem(CACHE_PROD, JSON.stringify(d.products)); globalProducts = d.products;
+                        document.getElementById('product-db-status').innerHTML = '<i class="fa-solid fa-check text-green-600"></i> DB Ready'; document.getElementById('product-db-status').classList.replace('bg-yellow-100', 'bg-green-100'); document.getElementById('product-db-status').classList.replace('text-yellow-700', 'text-green-700'); document.getElementById('product-db-status').classList.remove('animate-pulse');
                     }
                     if (d.expired) {
-                        localStorage.setItem(CACHE_EXP, JSON.stringify(d.expired));
-                        globalExpiredData = recalculateAge(d.expired);
-                        renderStats(globalExpiredData);
-                        renderTableData(globalExpiredData);
+                        localStorage.setItem(CACHE_EXP, JSON.stringify(d.expired)); globalExpiredData = recalculateAge(d.expired);
+                        renderStats(globalExpiredData); renderTableData(globalExpiredData);
                     }
                     if (d.history) {
-                        localStorage.setItem(CACHE_HIST, JSON.stringify(d.history));
-                        globalHistoryData = d.history;
+                        localStorage.setItem(CACHE_HIST, JSON.stringify(d.history)); globalHistoryData = d.history;
                         renderHistory(globalHistoryData);
                     }
                 }
             } finally {
-                if(icon) icon.classList.remove('fa-spin'); 
+                document.querySelectorAll('.fa-sync, .fa-rotate-right').forEach(i => i.classList.remove('fa-spin'));
+                if(tb1) tb1.classList.remove('bg-syncing'); if(tb2) tb2.classList.remove('bg-syncing');
             }
         }
 
-        async function backgroundSyncAllWithLoader() {
-            showLoader('Menyinkronkan Data...');
+        async function backgroundSyncAllWithToast() {
+            showToast('info', 'Menyinkronkan dari server...');
             await backgroundSyncAll();
-            hideLoader();
-            showToast('success', 'Data tersinkronisasi');
-        }
-
-        async function refreshRakStatus() {
-            await backgroundSyncAll();
-            showToast('success', 'Status Rak Diperbarui');
+            showToast('success', 'Data Tersinkronisasi!');
         }
 
         // --- RENDERING ---
@@ -483,42 +381,23 @@
             const today = new Date(); today.setHours(0,0,0,0);
             return data.map(item => {
                 let realUmur = 0;
-                if(item.tarik) {
-                    const tarikDate = new Date(item.tarik);
-                    if(!isNaN(tarikDate)) realUmur = Math.ceil((tarikDate - today) / (1000 * 60 * 60 * 24));
-                }
+                if(item.tarik) { const tarikDate = new Date(item.tarik); if(!isNaN(tarikDate)) realUmur = Math.ceil((tarikDate - today) / (86400000)); }
                 return {...item, umur: realUmur};
             });
         }
 
         function renderStats(data) {
-            let layak=0, tarik=0, retur=0;
-            const racksDone = new Set();
-            data.forEach(d => { 
-                const u = parseInt(d.umur); 
-                if(u > 15) layak++; else if(u >= 8) tarik++; else retur++; 
-                if(d.rak) racksDone.add(norm(d.rak));
-            });
-            document.getElementById('dash-total').innerText = data.length;
-            document.getElementById('dash-layak').innerText = layak;
-            document.getElementById('dash-tarik').innerText = tarik;
-            document.getElementById('dash-retur').innerText = retur;
-
-            const wajibTarikCount = tarik + retur;
-            const badge = document.getElementById('notif-count');
-            badge.innerText = wajibTarikCount;
-            if(wajibTarikCount > 0) badge.classList.remove('hidden'); else badge.classList.add('hidden');
-
-            const cRak = localStorage.getItem(CACHE_RAK);
-            if(cRak) renderRackBadges(JSON.parse(cRak).food, JSON.parse(cRak).nonfood, racksDone);
+            let layak=0, tarik=0, retur=0; const racksDone = new Set();
+            data.forEach(d => { const u = parseInt(d.umur); if(u > 15) layak++; else if(u >= 8) tarik++; else retur++; if(d.rak) racksDone.add(norm(d.rak)); });
+            document.getElementById('dash-total').innerText = data.length; document.getElementById('dash-layak').innerText = layak; document.getElementById('dash-tarik').innerText = tarik; document.getElementById('dash-retur').innerText = retur;
+            const wajibTarikCount = tarik + retur; const badge = document.getElementById('notif-count'); badge.innerText = wajibTarikCount; if(wajibTarikCount > 0) badge.classList.remove('hidden'); else badge.classList.add('hidden');
+            const cRak = localStorage.getItem(CACHE_RAK); if(cRak) renderRackBadges(JSON.parse(cRak).food, JSON.parse(cRak).nonfood, racksDone);
         }
 
         function renderRackBadges(mFood, mNonFood, doneSet) {
             const fill = (list, containerId) => {
-                const c = document.getElementById(containerId); c.innerHTML='';
-                let hasItem = false;
-                list.forEach(r => {
-                    const normalizedRak = norm(r); const isDone = doneSet.has(normalizedRak);
+                const c = document.getElementById(containerId); c.innerHTML=''; let hasItem = false;
+                list.forEach(r => { const normalizedRak = norm(r); const isDone = doneSet.has(normalizedRak);
                     if ((containerId.includes('done') && isDone) || (containerId.includes('pending') && !isDone)) {
                         hasItem = true; const b = document.createElement('span'); b.className = `rack-badge ${isDone ? 'rack-done' : 'rack-pending'}`;
                         b.innerHTML = `${isDone ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-clock"></i>'} ${r}`; c.appendChild(b);
@@ -526,24 +405,19 @@
                 });
                 if(!hasItem) c.innerHTML = '<span class="text-xs text-gray-400 italic">Tidak ada data</span>';
             };
-            fill(mFood, 'list-done-food'); fill(mFood, 'list-pending-food');
-            fill(mNonFood, 'list-done-nonfood'); fill(mNonFood, 'list-pending-nonfood');
+            fill(mFood, 'list-done-food'); fill(mFood, 'list-pending-food'); fill(mNonFood, 'list-done-nonfood'); fill(mNonFood, 'list-pending-nonfood');
         }
 
         function renderTableData(data, filterText = '') {
             const tbody = document.getElementById('tbody-all'); if(!tbody) return;
             let filteredData = data;
-            if(filterText) {
-                const upperFilter = filterText.toUpperCase();
-                filteredData = data.filter(item => (item.rak && item.rak.toUpperCase().includes(upperFilter)) || (item.desc && item.desc.toUpperCase().includes(upperFilter)) || (item.barcode && String(item.barcode).includes(upperFilter)));
-            }
+            if(filterText) { const upperFilter = filterText.toUpperCase(); filteredData = data.filter(item => (item.rak && item.rak.toUpperCase().includes(upperFilter)) || (item.desc && item.desc.toUpperCase().includes(upperFilter)) || (item.barcode && String(item.barcode).includes(upperFilter))); }
             if(filteredData.length === 0) { tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center">Data kosong</td></tr>'; return; }
 
             filteredData.sort((a,b) => a.umur - b.umur);
             const rowsHTML = filteredData.map(item => {
                 let u = parseInt(item.umur); let badgeClass = u > 15 ? 'bg-green-custom' : u >= 8 ? 'bg-yellow-custom' : u >= 1 ? 'bg-red-custom' : 'bg-black-custom';
                 let displayDate = '-'; try { displayDate = new Date(item.exp).toLocaleDateString('id-ID'); } catch(e){}
-
                 return `<tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"><td class="p-3">${item.nik}</td><td class="p-3">${item.petugas}</td><td class="p-3 font-mono">${item.rak}</td><td class="p-3">${item.plu}</td><td class="p-3">${item.barcode}</td><td class="p-3 font-bold text-xs min-w-desc">${item.desc}</td><td class="p-3">${displayDate}</td><td class="p-3 text-center">${item.qty}</td><td class="p-3 text-center">${item.rh}</td><td class="p-3 text-center"><span class="status-badge ${badgeClass}">${item.umur} Hari</span></td><td class="p-3 text-center flex gap-1 justify-center"><button onclick='openEditModal(${JSON.stringify(item)})' class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200 text-xs"><i class="fa-solid fa-pen"></i></button><button onclick='deleteItem(${JSON.stringify(item)})' class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200 text-xs"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             }).join('');
             tbody.innerHTML = rowsHTML;
@@ -558,7 +432,7 @@
             }).join('');
         }
 
-        // --- NAVIGATION ---
+        // --- NAVIGATION INSTAN LOKAL CACHE ---
         function router(p) {
             document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden')); 
             document.querySelectorAll('.nav-item').forEach(el => { el.classList.remove('active-nav', 'text-primary', 'dark:text-blue-400'); el.classList.add('text-gray-500', 'dark:text-gray-400'); });
@@ -566,7 +440,7 @@
             if(targetNav) { targetNav.classList.remove('text-gray-500', 'dark:text-gray-400'); targetNav.classList.add('active-nav', 'text-primary', 'dark:text-blue-400'); }
             const target = document.getElementById('page-'+p); target.classList.remove('hidden', 'animate-fade-in'); void target.offsetWidth; target.classList.add('animate-fade-in');
             
-            // Render langsung dari Clone Memory (0 Detik Delay) tanpa memanggil fetch server!
+            // Langsung Load dari Array Memory (0 DETIK!)
             if(p === 'all-data' && globalExpiredData.length > 0) renderTableData(globalExpiredData);
             if(p === 'rekap' && globalHistoryData.length > 0) renderHistory(globalHistoryData); 
         }
@@ -596,7 +470,6 @@
 
         // --- API ---
         async function fetchAPI(action, params = {}, method = 'GET', silent = false) {
-            if(!silent) showLoader(); 
             try {
                 let url = `${GAS_API_URL}?action=${action}&_t=${new Date().getTime()}`;
                 let options = { method: method, redirect: 'follow' };
@@ -607,18 +480,16 @@
                 if (!req.ok) throw new Error(`HTTP Error: ${req.status}`);
                 const res = await req.json();
                 
-                if(!silent) hideLoader();
-                if (res && res.status === 'error') showToast('error', res.message || 'Terjadi kesalahan data');
+                if (res && res.status === 'error' && !silent) showToast('error', res.message || 'Terjadi kesalahan data');
                 return res;
             } catch (err) {
-                if(!silent) hideLoader();
                 console.error("Fetch Error:", err);
-                if(!silent) showToast('error', 'Koneksi ke Server Gagal');
+                if(!silent) showToast('error', 'Koneksi Server Gagal');
                 return null;
             }
         }
 
-        // --- SUBMISSION & DEDUPLICATION FORM ---
+        // --- SUBMISSION & OPTIMISTIC UI ---
         async function lookupKaryawan() {
             const nik = document.getElementById('input-nik').value; if(!nik) return;
             const res = await fetchAPI('getKaryawan', {nik}, 'GET', true);
@@ -628,43 +499,31 @@
 
         async function handleProductInput(rowIdx, code, skipDraftSave = false) {
             if(!code) return;
-            let searchCode = String(code).trim().toUpperCase();
-            let cleanSearch = searchCode.replace(/^0+/, ''); 
+            let searchCode = String(code).trim().toUpperCase(); let cleanSearch = searchCode.replace(/^0+/, ''); 
 
-            // ANTI DUPLIKAT DI FORM (Jika barcode sama dengan baris lain, hapus yang lama)
+            // Hapus duplikat dalam form
             for(let i=0; i<MAX_ROWS; i++) {
                 if(i !== rowIdx) {
                     let otherCode = document.getElementById(`code-${i}`).value;
                     if(otherCode && (otherCode.toUpperCase() === searchCode || otherCode.replace(/^0+/, '') === cleanSearch)) {
-                        document.getElementById(`code-${i}`).value = ''; document.getElementById(`desc-${i}`).value = '';
-                        document.getElementById(`date-${i}`).value = ''; document.getElementById(`qty-${i}`).value = '';
-                        document.getElementById(`rh-${i}`).value = ''; document.getElementById(`tarik-${i}`).value = '';
-                        document.getElementById(`real-plu-${i}`).value = ''; document.getElementById(`real-bcd-${i}`).value = '';
-                        document.getElementById(`umur-${i}`).innerText = '-'; document.getElementById(`umur-${i}`).className = 'p-2 w-16 text-center status-badge border font-bold';
-                        showToast('info', `Duplikat: Item dipindahkan dari baris ${i+1}`);
+                        document.getElementById(`code-${i}`).value = ''; document.getElementById(`desc-${i}`).value = ''; document.getElementById(`date-${i}`).value = ''; document.getElementById(`qty-${i}`).value = ''; document.getElementById(`rh-${i}`).value = ''; document.getElementById(`tarik-${i}`).value = ''; document.getElementById(`real-plu-${i}`).value = ''; document.getElementById(`real-bcd-${i}`).value = ''; document.getElementById(`umur-${i}`).innerText = '-'; document.getElementById(`umur-${i}`).className = 'p-2 w-16 text-center status-badge border font-bold';
+                        showToast('info', `Duplikat di form dihapus`);
                     }
                 }
             }
 
-            // Cari produk lokal
+            // Cari lokal instan
             let found = globalProducts.find(p => {
                 let bcd = String(p.barcode).trim().toUpperCase(); let plu = String(p.plu).trim().toUpperCase();
                 return bcd === searchCode || plu === searchCode || (bcd.replace(/^0+/,'') === cleanSearch && cleanSearch !== '') || (plu.replace(/^0+/,'') === cleanSearch && cleanSearch !== '');
             });
 
-            if(found) {
-                fillProductRow(rowIdx, found, code, skipDraftSave);
-            } else {
-                // Fallback ke server jika belum ter-cache
+            if(found) fillProductRow(rowIdx, found, code, skipDraftSave);
+            else {
                 document.getElementById(`desc-${rowIdx}`).value = "Mencari...";
                 const res = await fetchAPI('getProduct', {code: searchCode}, 'GET', true);
-                if (res && res.found) {
-                    fillProductRow(rowIdx, res.data, code, skipDraftSave);
-                    globalProducts.push(res.data); // Update lokal secara optimistik
-                } else {
-                    document.getElementById(`desc-${rowIdx}`).value = "TIDAK DITEMUKAN";
-                    document.getElementById(`rh-${rowIdx}`).value = "";
-                }
+                if (res && res.found) { fillProductRow(rowIdx, res.data, code, skipDraftSave); globalProducts.push(res.data); } 
+                else { document.getElementById(`desc-${rowIdx}`).value = "TIDAK DITEMUKAN"; document.getElementById(`rh-${rowIdx}`).value = ""; }
             }
         }
 
@@ -686,6 +545,7 @@
             if(!skipDraftSave) saveDraft();
         }
 
+        // SIMPAN OPTIMISTIC UI (0 Detik Delay Untuk User)
         async function saveBatchData() {
             const nik = document.getElementById('input-nik').value; const rak = document.getElementById('input-rak').value.toUpperCase(); const nama = document.getElementById('input-nama').value;
             if(!nik || !rak || !nama) return showToast('warning', 'Data Karyawan & Rak Wajib Diisi');
@@ -705,14 +565,28 @@
             if(hasError) return showToast('error', 'Lengkapi data baris yg terisi');
             if(entries.length === 0) return showToast('info', 'Tidak ada data valid');
             
-            const res = await fetchAPI('saveExpired', entries, 'POST'); // Panggil backend (otomatis nimpa duplikat)
+            // 1. UPDATE LOKAL INSTAN (OPTIMISTIC UI)
+            Swal.fire({title: 'Tersimpan!', text: 'Data sedang disinkronkan ke server', icon: 'success', timer: 1500, showConfirmButton: false});
+            
+            let ts = new Date().toISOString();
+            entries.forEach(e => {
+                // Menghapus data duplikat secara lokal (meniru Google Sheet)
+                globalExpiredData = globalExpiredData.filter(item => !(item.rak === e.nomor_rak && (item.barcode === e.barcode || item.plu === e.plu || item.barcode === e.plu || item.plu === e.barcode)));
+                // Memasukkan data baru
+                globalExpiredData.push({ rowIndex: 999999, timestamp: ts, nik: e.nik, petugas: e.petugas, rak: e.nomor_rak, barcode: e.barcode, plu: e.plu, desc: e.deskripsi, exp: e.tgl_expired, qty: e.qty, rh: e.rh, tarik: e.tgl_tarik, umur: e.umur_produk });
+            });
+
+            hasUnsavedData = false; localStorage.removeItem(CACHE_DRAFT);
+            executeReset(true); 
+            renderTableData(globalExpiredData); // Tampil Instan!
+            router('all-data'); // Auto pindah Tab
+
+            // 2. KIRIM KE SERVER DIAM-DIAM
+            const res = await fetchAPI('saveExpired', entries, 'POST', true);
             if(res && res.status === 'success') {
-                hasUnsavedData = false; localStorage.removeItem(CACHE_DRAFT);
-                executeReset(); 
-                
-                // Segera tarik data yang baru saja disimpan!
-                await backgroundSyncAllWithLoader(); 
-                Swal.fire({title: 'Berhasil', text: 'Data Expired Disimpan', icon: 'success'});
+                backgroundSyncAll(); // Update dengan ID Asli dari server
+            } else {
+                showToast('error', 'Server gagal menyimpan, tap logo sync nanti');
             }
         }
         
@@ -730,8 +604,6 @@
                 if(res && res.status === 'success') { 
                     Swal.fire('Sukses', actionType === 'update' ? 'Produk Diupdate' : 'Produk Ditambahkan', 'success'); 
                     e.target.reset(); 
-                    
-                    // Optimistic update tanpa loading lama
                     if (actionType === 'update') {
                         let idx = globalProducts.findIndex(p => p.barcode === barcode || p.plu === plu);
                         if(idx > -1) globalProducts[idx] = {barcode, plu, deskripsi: desc, rh};
@@ -746,31 +618,44 @@
             } else { sendData('add'); }
         }
 
-        // --- UPDATE & DELETE (AUTO-SYNC HISTORY) ---
+        // --- UPDATE & DELETE (OPTIMISTIC UI) ---
         function openEditModal(i) { currentEditItem=i; document.getElementById('edit-desc').innerText=i.desc; document.getElementById('edit-date').value=i.exp; document.getElementById('edit-qty').value=i.qty; document.getElementById('edit-modal').classList.remove('hidden'); }
+        
         async function saveEditExpired() { 
             const d=document.getElementById('edit-date').value; const q=document.getElementById('edit-qty').value; if(!d||!q)return; 
             const rh=parseInt(currentEditItem.rh); const e=new Date(d); const t=new Date(e); t.setDate(t.getDate()-rh); 
             const u=Math.ceil((t-new Date().setHours(0,0,0,0))/86400000); 
             const p={rowIndex:currentEditItem.rowIndex, newData:{exp:d,qty:q,tarik:t.toISOString().split('T')[0],umur:u}, oldData:currentEditItem}; 
-            
             document.getElementById('edit-modal').classList.add('hidden');
-            const res = await fetchAPI('updateExpired',p,'POST'); 
-            if(res?.status === 'success') { await backgroundSyncAllWithLoader(); showToast('success', 'Data berhasil diupdate'); }
+            
+            // LOKAL INSTAN
+            let idx = globalExpiredData.findIndex(x => x.rowIndex === currentEditItem.rowIndex);
+            if(idx > -1) { globalExpiredData[idx].exp = d; globalExpiredData[idx].qty = q; globalExpiredData[idx].tarik = t.toISOString().split('T')[0]; globalExpiredData[idx].umur = u; renderTableData(globalExpiredData); }
+            showToast('success', 'Data Diupdate (Syncing...)');
+
+            // SERVER DIAM DIAM
+            const res = await fetchAPI('updateExpired',p,'POST', true); 
+            if(res?.status === 'success') backgroundSyncAll(); 
         }
         
         async function deleteItem(i) { 
-            Swal.fire({ title: 'Tarik Barang?', text: 'Data akan dihapus & tercatat di History', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya, Tarik!' })
+            Swal.fire({ title: 'Tarik Barang?', text: 'Data akan ditarik & tercatat di History', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya, Tarik!' })
             .then(async r => {
                 if(r.isConfirmed) {
-                    const res = await fetchAPI('deleteExpired', {rowIndex: i.rowIndex}, 'POST'); 
-                    if(res?.status === 'success') { await backgroundSyncAllWithLoader(); showToast('success', 'Barang ditarik'); }
+                    // LOKAL INSTAN
+                    globalExpiredData = globalExpiredData.filter(x => x.rowIndex !== i.rowIndex);
+                    renderTableData(globalExpiredData);
+                    showToast('success', 'Barang Ditarik (Syncing...)');
+
+                    // SERVER DIAM DIAM
+                    const res = await fetchAPI('deleteExpired', {rowIndex: i.rowIndex}, 'POST', true); 
+                    if(res?.status === 'success') backgroundSyncAll(); 
                 }
             });
         }
 
         // --- UTILS ---
-        function sortTable(tableId, n) { /* Sort table Logic */ const table = document.getElementById(tableId); let switching = true, dir = "asc", switchcount = 0; while (switching) { switching = false; const rows = table.rows; for (let i = 1; i < (rows.length - 1); i++) { let shouldSwitch = false; const x = rows[i].getElementsByTagName("TD")[n]; const y = rows[i + 1].getElementsByTagName("TD")[n]; let xVal = x.innerText.toLowerCase(); let yVal = y.innerText.toLowerCase(); let xNum = parseFloat(xVal), yNum = parseFloat(yVal); if (!isNaN(xNum) && !isNaN(yNum)) { if (dir == "asc" && xNum > yNum) shouldSwitch = true; else if (dir == "desc" && xNum < yNum) shouldSwitch = true; } else { if (dir == "asc" && xVal > yVal) shouldSwitch = true; else if (dir == "desc" && xVal < yVal) shouldSwitch = true; } if (shouldSwitch) { rows[i].parentNode.insertBefore(rows[i + 1], rows[i]); switching = true; switchcount++; break; } } if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; } } }
+        function sortTable(tableId, n) { const table = document.getElementById(tableId); let switching = true, dir = "asc", switchcount = 0; while (switching) { switching = false; const rows = table.rows; for (let i = 1; i < (rows.length - 1); i++) { let shouldSwitch = false; const x = rows[i].getElementsByTagName("TD")[n]; const y = rows[i + 1].getElementsByTagName("TD")[n]; let xVal = x.innerText.toLowerCase(); let yVal = y.innerText.toLowerCase(); let xNum = parseFloat(xVal), yNum = parseFloat(yVal); if (!isNaN(xNum) && !isNaN(yNum)) { if (dir == "asc" && xNum > yNum) shouldSwitch = true; else if (dir == "desc" && xNum < yNum) shouldSwitch = true; } else { if (dir == "asc" && xVal > yVal) shouldSwitch = true; else if (dir == "desc" && xVal < yVal) shouldSwitch = true; } if (shouldSwitch) { rows[i].parentNode.insertBefore(rows[i + 1], rows[i]); switching = true; switchcount++; break; } } if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; } } }
         function filterTable(tbodyId, inputId) { const filter = document.getElementById(inputId).value.toUpperCase(); const rows = document.getElementById(tbodyId).getElementsByTagName('tr'); for(let row of rows) { row.style.display = row.innerText.toUpperCase().indexOf(filter) > -1 ? "" : "none"; } }
         function exportToExcel(tableId) { const t = document.getElementById(tableId); XLSX.writeFile(XLSX.utils.table_to_book(t), 'Rekap_Data.xlsx'); }
         

@@ -35,40 +35,21 @@
         .min-w-rh { min-width: 80px; }
         
         .search-container { position: relative; display: flex; align-items: center; }
-        .search-input { 
-            width: 40px; padding: 8px 8px 8px 32px; border-radius: 999px; 
-            border: 1px solid transparent; background: transparent; cursor: pointer;
-            transition: width 0.4s ease, background-color 0.3s, border-color 0.3s; color: transparent;
-        }
-        .search-input:focus, .search-input:not(:placeholder-shown) { 
-            width: 180px; background: white; border-color: #cbd5e1; cursor: text; color: inherit; outline: none;
-        }
-        .dark .search-input:focus, .dark .search-input:not(:placeholder-shown) {
-            background: #1f2937; border-color: #4b5563; color: white;
-        }
+        .search-input { width: 40px; padding: 8px 8px 8px 32px; border-radius: 999px; border: 1px solid transparent; background: transparent; cursor: pointer; transition: width 0.4s ease, background-color 0.3s, border-color 0.3s; color: transparent; }
+        .search-input:focus, .search-input:not(:placeholder-shown) { width: 180px; background: white; border-color: #cbd5e1; cursor: text; color: inherit; outline: none; }
+        .dark .search-input:focus, .dark .search-input:not(:placeholder-shown) { background: #1f2937; border-color: #4b5563; color: white; }
         .search-icon-overlay { position: absolute; left: 12px; pointer-events: none; color: #6b7280; transition: color 0.3s; }
         .dark .search-icon-overlay { color: #9ca3af; }
         .search-input:focus ~ .search-icon-overlay { color: #3b82f6; }
 
         .notif-btn { position: relative; }
-        .notif-badge { 
-            position: absolute; top: -5px; right: -5px; 
-            background-color: #ef4444; color: white; 
-            font-size: 0.65rem; font-weight: bold; 
-            width: 18px; height: 18px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center;
-            border: 2px solid white;
-        }
+        .notif-badge { position: absolute; top: -5px; right: -5px; background-color: #ef4444; color: white; font-size: 0.65rem; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
 
         th.sortable { cursor: pointer; user-select: none; transition: background-color 0.2s; white-space: nowrap; }
         th.sortable:hover { background-color: rgba(0,0,0,0.05); }
         .dark th.sortable:hover { background-color: rgba(255,255,255,0.05); }
 
-        .rack-badge {
-            font-size: 0.75rem; padding: 6px 10px; border-radius: 8px; font-family: monospace; font-weight: 700; 
-            cursor: default; transition: transform 0.1s; display: inline-flex; align-items: center; gap: 4px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 4px;
-        }
+        .rack-badge { font-size: 0.75rem; padding: 6px 10px; border-radius: 8px; font-family: monospace; font-weight: 700; cursor: default; transition: transform 0.1s; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 4px; }
         .rack-done { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
         .dark .rack-done { background-color: #064e3b; color: #d1fae5; border-color: #059669; }
         .rack-pending { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
@@ -99,15 +80,12 @@
             <div class="flex items-center gap-2">
                 <h1 class="font-bold text-primary text-lg tracking-tight"><i class="fa-solid fa-boxes-stacked mr-2"></i>MONITOR EXP</h1>
             </div>
-            
             <div class="flex items-center gap-4">
                 <button onclick="showWajibTarik()" class="notif-btn text-gray-600 dark:text-gray-300 hover:text-primary transition">
-                    <i class="fa-solid fa-bell text-xl"></i>
-                    <span id="notif-count" class="notif-badge hidden">0</span>
+                    <i class="fa-solid fa-bell text-xl"></i><span id="notif-count" class="notif-badge hidden">0</span>
                 </button>
                 <button onclick="toggleDarkMode()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-yellow-400 flex items-center justify-center shadow-sm border dark:border-gray-600">
-                    <i class="fa-solid fa-moon dark:hidden text-xs"></i>
-                    <i class="fa-solid fa-sun hidden dark:block text-xs"></i>
+                    <i class="fa-solid fa-moon dark:hidden text-xs"></i><i class="fa-solid fa-sun hidden dark:block text-xs"></i>
                 </button>
             </div>
         </header>
@@ -151,7 +129,6 @@
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 relative">
                         <h2 class="text-xl font-bold mb-4 border-b pb-2 dark:border-gray-700">Form Input Data</h2>
                         
-                        <!-- Mini Indikator Status Local Database Produk -->
                         <div id="product-db-status" class="absolute top-6 right-6 text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full flex items-center gap-1 animate-pulse"><i class="fa-solid fa-arrows-rotate"></i> Syncing DB</div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -181,7 +158,7 @@
                             <h2 class="text-xl font-bold">All Input Data</h2>
                             <div class="flex gap-2 items-center justify-end">
                                 <div class="search-container"><input type="text" id="search-all" onkeyup="renderTableData(globalExpiredData, this.value)" placeholder="Cari..." class="search-input dark:text-gray-100"><i class="fa-solid fa-search search-icon-overlay"></i></div>
-                                <button onclick="loadAllData(false)" class="px-3 py-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 whitespace-nowrap"><i class="fa-solid fa-sync"></i></button>
+                                <button onclick="backgroundSyncAllWithLoader()" class="px-3 py-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 whitespace-nowrap"><i class="fa-solid fa-sync"></i></button>
                             </div>
                         </div>
                         <div class="overflow-x-auto border rounded-lg dark:border-gray-700">
@@ -212,11 +189,8 @@
                         <div class="flex justify-between items-center mb-4">
                             <h2 class="text-xl font-bold">History Item Tarik</h2>
                             <div class="flex gap-2 items-center justify-end">
-                                <div class="search-container">
-                                    <input type="text" id="search-hist" onkeyup="filterTable('tbody-hist', 'search-hist')" placeholder="Cari history..." class="search-input dark:text-gray-100">
-                                    <i class="fa-solid fa-search search-icon-overlay"></i>
-                                </div>
-                                <button onclick="loadHistory(false)" class="px-3 py-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 whitespace-nowrap"><i class="fa-solid fa-sync"></i></button>
+                                <div class="search-container"><input type="text" id="search-hist" onkeyup="filterTable('tbody-hist', 'search-hist')" placeholder="Cari history..." class="search-input dark:text-gray-100"><i class="fa-solid fa-search search-icon-overlay"></i></div>
+                                <button onclick="backgroundSyncAllWithLoader()" class="px-3 py-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 whitespace-nowrap"><i class="fa-solid fa-sync"></i></button>
                                 <button onclick="exportToExcel('table-hist')" class="px-3 py-2 bg-green-600 text-white rounded font-bold text-xs whitespace-nowrap"><i class="fa-solid fa-file-excel mr-1"></i> XLS</button>
                             </div>
                         </div>
@@ -264,6 +238,7 @@
         </nav>
     </div>
 
+    <!-- MODALS -->
     <div id="camera-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-95 flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-md bg-black rounded-lg overflow-hidden relative"><div id="reader" class="w-full" style="min-height: 300px;"></div><div class="p-4 flex justify-between items-center bg-gray-900"><button onclick="toggleTorch()" class="text-white p-2 border border-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-white hover:text-black transition"><i class="fa-solid fa-bolt"></i></button><span class="text-white text-sm font-mono">Scan Barcode</span><button onclick="closeScanner()" class="text-red-500 text-xl"><i class="fa-solid fa-times"></i></button></div></div>
     </div>
@@ -275,24 +250,23 @@
     </div>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwABmcRf6ZXzkIXjVS0bav7AGwL_ENsBUuZnrYdO3Q151YZK_BG1DAnYnjMGL3zFfbB/exec"; 
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxnKT3ysrn_Hqk7iC0kysZVOJTHzeBjPO8WnID_SNTKoor2hw6gz7HyH-ZVhs5532AywA/exec"; 
         const MAX_ROWS = 20;
         const CACHE_RAK = 'monitor_exp_rak';
         const CACHE_EXP = 'monitor_exp_data';
         const CACHE_PROD = 'monitor_exp_products';
-        const CACHE_DRAFT = 'monitor_exp_draft'; // Cache untuk inputan draft
+        const CACHE_DRAFT = 'monitor_exp_draft'; // Cache auto-save input
         
         let currentActiveRow = null;
         let html5QrcodeScanner = null;
         let isTorchOn = false;
         let currentEditItem = null;
-        let hasUnsavedData = false; // Flag status data yang belum disave
+        let hasUnsavedData = false; // Flag status data input
         
-        // Data Local
         let globalExpiredData = [];
         let globalProducts = [];
 
-        // --- MODERN GLOBAL LOADER & TOAST ---
+        // --- GLOBAL LOADER & TOAST ---
         function showLoader(text = 'Memproses...') {
             const overlay = document.getElementById('loading-overlay');
             const box = document.getElementById('loading-box');
@@ -311,28 +285,21 @@
             setTimeout(() => overlay.classList.add('hidden'), 300);
         }
 
-        const Toast = Swal.mixin({
-            toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
-            timerProgressBar: true, didOpen: (t) => { t.addEventListener('mouseenter', Swal.stopTimer); t.addEventListener('mouseleave', Swal.resumeTimer) }
-        });
+        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
         function showToast(icon, title) { Toast.fire({ icon: icon, title: title }); }
 
-        // --- INIT & NAVIGATION TRAP (ANTI BACK) ---
+        // --- INIT & ANTI-BACK TRAP ---
         window.addEventListener('load', () => {
-            // Setup history trap agar tombol back tidak langsung menutup aplikasi
             history.pushState({ page: 'app' }, '', window.location.href);
-            loadDraft(); // Pulihkan data yang ter-cache jika ada
+            loadDraft(); 
         });
 
-        // Menangkap tombol Back/Swipe Back di HP
         window.addEventListener('popstate', function (event) {
             if (hasUnsavedData) {
-                // Trap kembali jika masih ada data unsaved
-                history.pushState({ page: 'app' }, '', window.location.href);
-                
+                history.pushState({ page: 'app' }, '', window.location.href); // trap
                 Swal.fire({
                     title: 'Simpan Data Input?',
-                    text: 'Anda menekan kembali namun ada data input yang belum tersimpan!',
+                    text: 'Ada data input yang belum tersimpan!',
                     icon: 'warning',
                     showCancelButton: true,
                     showDenyButton: true,
@@ -342,29 +309,20 @@
                     confirmButtonColor: '#2563eb',
                     denyButtonColor: '#d33'
                 }).then((result) => {
-                    if (result.isConfirmed) {
-                        saveBatchData();
-                    } else if (result.isDenied) {
-                        executeReset(); // Reset data diam-diam
-                        history.back(); // Lanjutkan proses Back browser
-                    }
+                    if (result.isConfirmed) saveBatchData();
+                    else if (result.isDenied) { executeReset(); history.back(); }
                 });
             }
         });
 
-        // Mencegah refresh (F5) / tutup tab tanpa peringatan
         window.addEventListener('beforeunload', function (e) {
-            if (hasUnsavedData) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
+            if (hasUnsavedData) { e.preventDefault(); e.returnValue = ''; }
         });
 
         document.addEventListener('DOMContentLoaded', () => {
             generateInputRows();
             initDashboard(); 
             
-            // Trigger auto-save draft setiap kali RAK diisi
             document.getElementById('input-rak').addEventListener('input', (e) => {
                 const nik = document.getElementById('input-nik').value;
                 if(nik && e.target.value.length >= 2) {
@@ -397,13 +355,10 @@
                 if (code || date || qty) hasData = true;
             }
             
-            hasUnsavedData = hasData || rak !== ''; // Jika form terisi sesuatu
+            hasUnsavedData = hasData || rak !== ''; 
             
-            if (hasUnsavedData) {
-                localStorage.setItem(CACHE_DRAFT, JSON.stringify({nik, nama, toko, rak, rows}));
-            } else {
-                localStorage.removeItem(CACHE_DRAFT);
-            }
+            if (hasUnsavedData) localStorage.setItem(CACHE_DRAFT, JSON.stringify({nik, nama, toko, rak, rows}));
+            else localStorage.removeItem(CACHE_DRAFT);
         }
 
         function loadDraft() {
@@ -429,13 +384,13 @@
                             }
                             if(draft.rows[i].date) document.getElementById(`date-${i}`).value = draft.rows[i].date;
                             if(draft.rows[i].qty) document.getElementById(`qty-${i}`).value = draft.rows[i].qty;
-                            if(draft.rows[i].date && draft.rows[i].code) calculateRow(i);
+                            if(draft.rows[i].date && draft.rows[i].code) calculateRow(i, true);
                         }
                     }
                     if(draft.rak || draft.rows.some(r => r.code || r.date || r.qty)) {
                         hasUnsavedData = true;
-                        showToast('info', 'Draft input sebelumnya dipulihkan');
-                        router('input'); // Arahkan ke tab input secara otomatis
+                        showToast('info', 'Draft dipulihkan');
+                        router('input'); 
                     }
                 } catch(e) {}
             }
@@ -443,7 +398,7 @@
 
         const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-        // --- Core Logic & Background Sync ---
+        // --- CORE LOGIC & 1-CLICK SYNC (SUPER FAST) ---
         async function initDashboard() {
             const cRak = localStorage.getItem(CACHE_RAK);
             const cExp = localStorage.getItem(CACHE_EXP);
@@ -463,83 +418,54 @@
                 renderStats(data);
                 renderTableData(data); 
             }
-            
-            backgroundSyncAll();
+            backgroundSyncAll(); // Latar belakang
         }
 
         async function backgroundSyncAll() {
-            const [resRak, resExp, resProd, resHist] = await Promise.all([
-                fetchAPI('getRakData', {}, 'GET', true),
-                fetchAPI('getAllExpired', {}, 'GET', true),
-                fetchAPI('getAllProducts', {}, 'GET', true),
-                fetchAPI('getHistory', {}, 'GET', true)
-            ]);
-
-            if(resRak?.status === 'success') {
-                localStorage.setItem(CACHE_RAK, JSON.stringify(resRak.data));
-                renderRak(resRak.data);
-            }
-            if(resProd?.status === 'success') {
-                localStorage.setItem(CACHE_PROD, JSON.stringify(resProd.data));
-                globalProducts = resProd.data;
-                document.getElementById('product-db-status').innerHTML = '<i class="fa-solid fa-check text-green-600"></i> DB Ready';
-                document.getElementById('product-db-status').classList.replace('bg-yellow-100', 'bg-green-100');
-                document.getElementById('product-db-status').classList.replace('text-yellow-700', 'text-green-700');
-                document.getElementById('product-db-status').classList.remove('animate-pulse');
-            }
-            if(resExp?.status === 'success') {
-                localStorage.setItem(CACHE_EXP, JSON.stringify(resExp.data));
-                globalExpiredData = recalculateAge(resExp.data);
-                renderStats(globalExpiredData);
-                renderTableData(globalExpiredData);
-            }
-            if(resHist?.status === 'success') {
-                renderHistory(resHist.data);
-            }
-        }
-
-        async function refreshRakStatus() {
             const icon = document.getElementById('sync-icon-dash');
             if(icon) icon.classList.add('fa-spin'); 
 
             try {
-                const [resRak, resExp] = await Promise.all([
-                    fetchAPI('getRakData', {}, 'GET', true),
-                    fetchAPI('getAllExpired', {}, 'GET', true)
-                ]);
+                // HANYA 1 REQUEST KE SERVER GOOGLE! (Sangat Menghemat Waktu)
+                const res = await fetchAPI('getInitialSync', {}, 'GET', true); 
 
-                if(resRak?.status === 'success') {
-                    localStorage.setItem(CACHE_RAK, JSON.stringify(resRak.data));
-                    renderRak(resRak.data);
-                }
-                if(resExp?.status === 'success') {
-                    localStorage.setItem(CACHE_EXP, JSON.stringify(resExp.data));
-                    const data = recalculateAge(resExp.data);
-                    globalExpiredData = data;
-                    renderStats(data);
-                    renderTableData(data);
+                if (res?.status === 'success') {
+                    const d = res.data;
+                    if (d.rak) { localStorage.setItem(CACHE_RAK, JSON.stringify(d.rak)); renderRak(d.rak); }
+                    if (d.products) {
+                        localStorage.setItem(CACHE_PROD, JSON.stringify(d.products));
+                        globalProducts = d.products;
+                        document.getElementById('product-db-status').innerHTML = '<i class="fa-solid fa-check text-green-600"></i> DB Ready';
+                        document.getElementById('product-db-status').classList.replace('bg-yellow-100', 'bg-green-100');
+                        document.getElementById('product-db-status').classList.replace('text-yellow-700', 'text-green-700');
+                        document.getElementById('product-db-status').classList.remove('animate-pulse');
+                    }
+                    if (d.expired) {
+                        localStorage.setItem(CACHE_EXP, JSON.stringify(d.expired));
+                        globalExpiredData = recalculateAge(d.expired);
+                        renderStats(globalExpiredData);
+                        renderTableData(globalExpiredData);
+                    }
+                    if (d.history) renderHistory(d.history);
                 }
             } finally {
                 if(icon) icon.classList.remove('fa-spin'); 
             }
         }
 
-        async function loadAllData(silent = false) {
-            const res = await fetchAPI('getAllExpired', {}, 'GET', silent);
-            if(res?.status === 'success') {
-                localStorage.setItem(CACHE_EXP, JSON.stringify(res.data));
-                globalExpiredData = recalculateAge(res.data);
-                renderTableData(globalExpiredData);
-                renderStats(globalExpiredData);
-            }
+        async function backgroundSyncAllWithLoader() {
+            showLoader('Menyinkronkan Data...');
+            await backgroundSyncAll();
+            hideLoader();
+            showToast('success', 'Data tersinkronisasi');
         }
 
-        async function loadHistory(silent = false) {
-            const res = await fetchAPI('getHistory', {}, 'GET', silent);
-            if(res?.status === 'success') renderHistory(res.data);
+        async function refreshRakStatus() {
+            await backgroundSyncAll();
+            showToast('success', 'Status Rak Diperbarui');
         }
 
-        // --- Rendering Functions ---
+        // --- RENDERING ---
         function recalculateAge(data) {
             const today = new Date(); today.setHours(0,0,0,0);
             return data.map(item => {
@@ -568,8 +494,7 @@
             const wajibTarikCount = tarik + retur;
             const badge = document.getElementById('notif-count');
             badge.innerText = wajibTarikCount;
-            if(wajibTarikCount > 0) badge.classList.remove('hidden');
-            else badge.classList.add('hidden');
+            if(wajibTarikCount > 0) badge.classList.remove('hidden'); else badge.classList.add('hidden');
 
             const cRak = localStorage.getItem(CACHE_RAK);
             if(cRak) renderRackBadges(JSON.parse(cRak).food, JSON.parse(cRak).nonfood, racksDone);
@@ -580,14 +505,10 @@
                 const c = document.getElementById(containerId); c.innerHTML='';
                 let hasItem = false;
                 list.forEach(r => {
-                    const normalizedRak = norm(r); 
-                    const isDone = doneSet.has(normalizedRak);
+                    const normalizedRak = norm(r); const isDone = doneSet.has(normalizedRak);
                     if ((containerId.includes('done') && isDone) || (containerId.includes('pending') && !isDone)) {
-                        hasItem = true;
-                        const b = document.createElement('span');
-                        b.className = `rack-badge ${isDone ? 'rack-done' : 'rack-pending'}`;
-                        b.innerHTML = `${isDone ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-clock"></i>'} ${r}`;
-                        c.appendChild(b);
+                        hasItem = true; const b = document.createElement('span'); b.className = `rack-badge ${isDone ? 'rack-done' : 'rack-pending'}`;
+                        b.innerHTML = `${isDone ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-clock"></i>'} ${r}`; c.appendChild(b);
                     }
                 });
                 if(!hasItem) c.innerHTML = '<span class="text-xs text-gray-400 italic">Tidak ada data</span>';
@@ -597,51 +518,21 @@
         }
 
         function renderTableData(data, filterText = '') {
-            const tbody = document.getElementById('tbody-all');
-            if(!tbody) return;
-            
+            const tbody = document.getElementById('tbody-all'); if(!tbody) return;
             let filteredData = data;
             if(filterText) {
                 const upperFilter = filterText.toUpperCase();
-                filteredData = data.filter(item => 
-                    (item.rak && item.rak.toUpperCase().includes(upperFilter)) || 
-                    (item.desc && item.desc.toUpperCase().includes(upperFilter)) || 
-                    (item.barcode && String(item.barcode).includes(upperFilter))
-                );
+                filteredData = data.filter(item => (item.rak && item.rak.toUpperCase().includes(upperFilter)) || (item.desc && item.desc.toUpperCase().includes(upperFilter)) || (item.barcode && String(item.barcode).includes(upperFilter)));
             }
-
-            if(filteredData.length === 0) { 
-                tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center">Data kosong</td></tr>'; 
-                return; 
-            }
+            if(filteredData.length === 0) { tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center">Data kosong</td></tr>'; return; }
 
             filteredData.sort((a,b) => a.umur - b.umur);
-
             const rowsHTML = filteredData.map(item => {
-                let u = parseInt(item.umur);
-                let badgeClass = u > 15 ? 'bg-green-custom' : u >= 8 ? 'bg-yellow-custom' : u >= 1 ? 'bg-red-custom' : 'bg-black-custom';
-                let displayDate = '-';
-                try { displayDate = new Date(item.exp).toLocaleDateString('id-ID'); } catch(e){}
+                let u = parseInt(item.umur); let badgeClass = u > 15 ? 'bg-green-custom' : u >= 8 ? 'bg-yellow-custom' : u >= 1 ? 'bg-red-custom' : 'bg-black-custom';
+                let displayDate = '-'; try { displayDate = new Date(item.exp).toLocaleDateString('id-ID'); } catch(e){}
 
-                return `
-                    <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-                        <td class="p-3">${item.nik}</td>
-                        <td class="p-3">${item.petugas}</td>
-                        <td class="p-3 font-mono">${item.rak}</td>
-                        <td class="p-3">${item.plu}</td>
-                        <td class="p-3">${item.barcode}</td>
-                        <td class="p-3 font-bold text-xs min-w-desc">${item.desc}</td>
-                        <td class="p-3">${displayDate}</td>
-                        <td class="p-3 text-center">${item.qty}</td>
-                        <td class="p-3 text-center">${item.rh}</td>
-                        <td class="p-3 text-center"><span class="status-badge ${badgeClass}">${item.umur} Hari</span></td>
-                        <td class="p-3 text-center flex gap-1 justify-center">
-                            <button onclick='openEditModal(${JSON.stringify(item)})' class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200 text-xs"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick='deleteItem(${JSON.stringify(item)})' class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200 text-xs"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>`;
+                return `<tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"><td class="p-3">${item.nik}</td><td class="p-3">${item.petugas}</td><td class="p-3 font-mono">${item.rak}</td><td class="p-3">${item.plu}</td><td class="p-3">${item.barcode}</td><td class="p-3 font-bold text-xs min-w-desc">${item.desc}</td><td class="p-3">${displayDate}</td><td class="p-3 text-center">${item.qty}</td><td class="p-3 text-center">${item.rh}</td><td class="p-3 text-center"><span class="status-badge ${badgeClass}">${item.umur} Hari</span></td><td class="p-3 text-center flex gap-1 justify-center"><button onclick='openEditModal(${JSON.stringify(item)})' class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200 text-xs"><i class="fa-solid fa-pen"></i></button><button onclick='deleteItem(${JSON.stringify(item)})' class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200 text-xs"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             }).join('');
-
             tbody.innerHTML = rowsHTML;
         }
 
@@ -650,71 +541,33 @@
             tb.innerHTML = data.map(item => {
                 let d = item.tgl_tarik_real; try{d=new Date(d).toLocaleDateString('id-ID')}catch(e){}
                 let e = item.exp_lama; try{e=new Date(e).toLocaleDateString('id-ID')}catch(e){}
-                return `<tr class="border-b dark:border-gray-700">
-                    <td class="p-3">${d}</td>
-                    <td class="p-3">${item.rak}</td>
-                    <td class="p-3">${item.plu}</td>
-                    <td class="p-3">${item.barcode}</td>
-                    <td class="p-3 text-xs font-bold">${item.desc}</td>
-                    <td class="p-3">${e}</td>
-                    <td class="p-3 text-center">${item.rh}</td>
-                    <td class="p-3 text-center">${item.qty}</td>
-                </tr>`;
+                return `<tr class="border-b dark:border-gray-700"><td class="p-3">${d}</td><td class="p-3">${item.rak}</td><td class="p-3">${item.plu}</td><td class="p-3">${item.barcode}</td><td class="p-3 text-xs font-bold">${item.desc}</td><td class="p-3">${e}</td><td class="p-3 text-center">${item.rh}</td><td class="p-3 text-center">${item.qty}</td></tr>`;
             }).join('');
         }
 
-        // --- Navigation ---
+        // --- NAVIGATION ---
         function router(p) {
             document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden')); 
-            document.querySelectorAll('.nav-item').forEach(el => {
-                el.classList.remove('active-nav', 'text-primary', 'dark:text-blue-400');
-                el.classList.add('text-gray-500', 'dark:text-gray-400');
-            });
-
+            document.querySelectorAll('.nav-item').forEach(el => { el.classList.remove('active-nav', 'text-primary', 'dark:text-blue-400'); el.classList.add('text-gray-500', 'dark:text-gray-400'); });
             const targetNav = document.getElementById('nav-'+p);
-            if(targetNav) {
-                targetNav.classList.remove('text-gray-500', 'dark:text-gray-400');
-                targetNav.classList.add('active-nav', 'text-primary', 'dark:text-blue-400');
-            }
-
-            const target = document.getElementById('page-'+p);
-            target.classList.remove('hidden', 'animate-fade-in');
-            void target.offsetWidth; 
-            target.classList.add('animate-fade-in');
-
+            if(targetNav) { targetNav.classList.remove('text-gray-500', 'dark:text-gray-400'); targetNav.classList.add('active-nav', 'text-primary', 'dark:text-blue-400'); }
+            const target = document.getElementById('page-'+p); target.classList.remove('hidden', 'animate-fade-in'); void target.offsetWidth; target.classList.add('animate-fade-in');
             if(p === 'all-data' && globalExpiredData.length > 0) renderTableData(globalExpiredData);
-            if(p === 'rekap') loadHistory(true); 
         }
 
         function switchDashTab(tab) {
-             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-             document.getElementById('tab-' + tab).classList.add('active');
-             if(tab === 'done') {
-                 document.getElementById('view-done').classList.remove('hidden');
-                 document.getElementById('view-pending').classList.add('hidden');
-             } else {
-                 document.getElementById('view-done').classList.add('hidden');
-                 document.getElementById('view-pending').classList.remove('hidden');
-             }
+             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active')); document.getElementById('tab-' + tab).classList.add('active');
+             if(tab === 'done') { document.getElementById('view-done').classList.remove('hidden'); document.getElementById('view-pending').classList.add('hidden'); } 
+             else { document.getElementById('view-done').classList.add('hidden'); document.getElementById('view-pending').classList.remove('hidden'); }
         }
 
         function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
         
         function resetInputForm(silent = false) {
             if (!silent && hasUnsavedData) {
-                Swal.fire({
-                    title: 'Reset Form?',
-                    text: 'Semua data input belum tersimpan akan dihapus.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, Reset',
-                    cancelButtonText: 'Batal'
-                }).then((res) => {
-                    if (res.isConfirmed) executeReset();
-                });
-            } else {
-                executeReset();
-            }
+                Swal.fire({title: 'Reset Form?', text: 'Data input belum tersimpan akan dihapus.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Reset', cancelButtonText: 'Batal'})
+                .then((res) => { if (res.isConfirmed) executeReset(); });
+            } else executeReset();
         }
 
         function executeReset() {
@@ -722,10 +575,7 @@
             document.getElementById('input-area').classList.add('hidden'); 
             document.getElementById('input-overlay').classList.remove('hidden'); 
             generateInputRows();
-            
-            // Hapus cache dan reset flag
-            hasUnsavedData = false;
-            localStorage.removeItem(CACHE_DRAFT);
+            hasUnsavedData = false; localStorage.removeItem(CACHE_DRAFT);
         }
 
         // --- API ---
@@ -752,142 +602,108 @@
             }
         }
 
-        // --- Submission Logic & DEDUPLICATION FORM ---
+        // --- SUBMISSION & DEDUPLICATION FORM ---
         async function lookupKaryawan() {
-            const nik = document.getElementById('input-nik').value;
-            if(!nik) return;
-            const res = await fetchAPI('getKaryawan', {nik}, 'GET', false);
-            if(res && res.found) {
-                document.getElementById('input-nama').value = res.data.nama;
-                document.getElementById('input-toko').value = `${res.data.kode_toko} - ${res.data.nama_toko}`;
-                saveDraft();
-            } else showToast('error', 'NIK Tidak Ditemukan');
+            const nik = document.getElementById('input-nik').value; if(!nik) return;
+            const res = await fetchAPI('getKaryawan', {nik}, 'GET', true);
+            if(res && res.found) { document.getElementById('input-nama').value = res.data.nama; document.getElementById('input-toko').value = `${res.data.kode_toko} - ${res.data.nama_toko}`; saveDraft(); } 
+            else showToast('error', 'NIK Tidak Ditemukan');
         }
 
-        function handleProductInput(rowIdx, code, skipDraftSave = false) {
+        async function handleProductInput(rowIdx, code, skipDraftSave = false) {
             if(!code) return;
-            
             let searchCode = String(code).trim().toUpperCase();
             let cleanSearch = searchCode.replace(/^0+/, ''); 
 
-            // ANTI DUPLIKAT: Cek apakah Barcode/PLU ini sudah diisi di baris lain pada form ini
+            // ANTI DUPLIKAT DI FORM (Jika barcode sama dengan baris lain, hapus yang lama)
             for(let i=0; i<MAX_ROWS; i++) {
                 if(i !== rowIdx) {
                     let otherCode = document.getElementById(`code-${i}`).value;
                     if(otherCode && (otherCode.toUpperCase() === searchCode || otherCode.replace(/^0+/, '') === cleanSearch)) {
-                        // Jika ketemu duplikat, HAPUS baris lama secara otomatis
-                        document.getElementById(`code-${i}`).value = '';
-                        document.getElementById(`desc-${i}`).value = '';
-                        document.getElementById(`date-${i}`).value = '';
-                        document.getElementById(`qty-${i}`).value = '';
-                        document.getElementById(`rh-${i}`).value = '';
-                        document.getElementById(`tarik-${i}`).value = '';
-                        document.getElementById(`real-plu-${i}`).value = '';
-                        document.getElementById(`real-bcd-${i}`).value = '';
-                        document.getElementById(`umur-${i}`).innerText = '-';
-                        document.getElementById(`umur-${i}`).className = 'p-2 w-16 text-center status-badge border font-bold';
+                        document.getElementById(`code-${i}`).value = ''; document.getElementById(`desc-${i}`).value = '';
+                        document.getElementById(`date-${i}`).value = ''; document.getElementById(`qty-${i}`).value = '';
+                        document.getElementById(`rh-${i}`).value = ''; document.getElementById(`tarik-${i}`).value = '';
+                        document.getElementById(`real-plu-${i}`).value = ''; document.getElementById(`real-bcd-${i}`).value = '';
+                        document.getElementById(`umur-${i}`).innerText = '-'; document.getElementById(`umur-${i}`).className = 'p-2 w-16 text-center status-badge border font-bold';
                         showToast('info', `Duplikat: Item dipindahkan dari baris ${i+1}`);
                     }
                 }
             }
 
-            // Cari di variabel lokal (Tidak butuh internet!)
+            // Cari produk lokal
             let found = globalProducts.find(p => {
-                let bcd = String(p.barcode).trim().toUpperCase();
-                let plu = String(p.plu).trim().toUpperCase();
-                return bcd === searchCode || plu === searchCode || 
-                       (bcd.replace(/^0+/,'') === cleanSearch && cleanSearch !== '') || 
-                       (plu.replace(/^0+/,'') === cleanSearch && cleanSearch !== '');
+                let bcd = String(p.barcode).trim().toUpperCase(); let plu = String(p.plu).trim().toUpperCase();
+                return bcd === searchCode || plu === searchCode || (bcd.replace(/^0+/,'') === cleanSearch && cleanSearch !== '') || (plu.replace(/^0+/,'') === cleanSearch && cleanSearch !== '');
             });
 
             if(found) {
-                document.getElementById(`desc-${rowIdx}`).value = found.deskripsi;
-                document.getElementById(`rh-${rowIdx}`).value = found.rh;
-                document.getElementById(`real-plu-${rowIdx}`).value = found.plu || "";
-                document.getElementById(`real-bcd-${rowIdx}`).value = found.barcode || code;
-                calculateRow(rowIdx, skipDraftSave);
+                fillProductRow(rowIdx, found, code, skipDraftSave);
             } else {
-                document.getElementById(`desc-${rowIdx}`).value = "TIDAK DITEMUKAN";
-                document.getElementById(`rh-${rowIdx}`).value = "";
+                // Fallback ke server jika belum ter-cache
+                document.getElementById(`desc-${rowIdx}`).value = "Mencari...";
+                const res = await fetchAPI('getProduct', {code: searchCode}, 'GET', true);
+                if (res && res.found) {
+                    fillProductRow(rowIdx, res.data, code, skipDraftSave);
+                    globalProducts.push(res.data); // Update lokal secara optimistik
+                } else {
+                    document.getElementById(`desc-${rowIdx}`).value = "TIDAK DITEMUKAN";
+                    document.getElementById(`rh-${rowIdx}`).value = "";
+                }
             }
-            if(!skipDraftSave) saveDraft();
+        }
+
+        function fillProductRow(rowIdx, product, scannedCode, skipDraftSave) {
+            document.getElementById(`desc-${rowIdx}`).value = product.deskripsi; document.getElementById(`rh-${rowIdx}`).value = product.rh;
+            document.getElementById(`real-plu-${rowIdx}`).value = product.plu || ""; document.getElementById(`real-bcd-${rowIdx}`).value = product.barcode || scannedCode;
+            calculateRow(rowIdx, skipDraftSave);
         }
 
         function calculateRow(i, skipDraftSave = false) {
-            const dateStr = document.getElementById(`date-${i}`).value;
-            const rh = parseInt(document.getElementById(`rh-${i}`).value);
+            const dateStr = document.getElementById(`date-${i}`).value; const rh = parseInt(document.getElementById(`rh-${i}`).value);
             if(dateStr && rh) {
-                const exp = new Date(dateStr);
-                const tarik = new Date(exp); tarik.setDate(tarik.getDate() - rh);
+                const exp = new Date(dateStr); const tarik = new Date(exp); tarik.setDate(tarik.getDate() - rh);
                 document.getElementById(`tarik-${i}`).value = tarik.toISOString().split('T')[0];
-                const today = new Date(); today.setHours(0,0,0,0);
-                const diff = Math.ceil((tarik - today) / (86400000));
-                
-                const el = document.getElementById(`umur-${i}`);
-                el.innerText = diff;
-                el.className = 'p-2 w-16 text-center status-badge border font-bold ';
-                if(diff > 15) el.classList.add('bg-green-custom');
-                else if(diff >= 8) el.classList.add('bg-yellow-custom');
-                else el.classList.add('bg-red-custom');
+                const today = new Date(); today.setHours(0,0,0,0); const diff = Math.ceil((tarik - today) / (86400000));
+                const el = document.getElementById(`umur-${i}`); el.innerText = diff; el.className = 'p-2 w-16 text-center status-badge border font-bold ';
+                if(diff > 15) el.classList.add('bg-green-custom'); else if(diff >= 8) el.classList.add('bg-yellow-custom'); else el.classList.add('bg-red-custom');
             }
             if(!skipDraftSave) saveDraft();
         }
 
         async function saveBatchData() {
-            const nik = document.getElementById('input-nik').value;
-            const rak = document.getElementById('input-rak').value.toUpperCase();
-            const nama = document.getElementById('input-nama').value;
+            const nik = document.getElementById('input-nik').value; const rak = document.getElementById('input-rak').value.toUpperCase(); const nama = document.getElementById('input-nama').value;
             if(!nik || !rak || !nama) return showToast('warning', 'Data Karyawan & Rak Wajib Diisi');
             
-            let entries = [];
-            let hasError = false;
-            let hasWarning = false;
-
+            let entries = []; let hasError = false; let hasWarning = false;
             for(let i=0; i<MAX_ROWS; i++) {
-                const code = document.getElementById(`code-${i}`).value;
-                const desc = document.getElementById(`desc-${i}`).value;
-                const date = document.getElementById(`date-${i}`).value;
-                const qty = document.getElementById(`qty-${i}`).value;
-                const rh = document.getElementById(`rh-${i}`).value;
-                const umur = parseInt(document.getElementById(`umur-${i}`).innerText);
+                const code = document.getElementById(`code-${i}`).value; const desc = document.getElementById(`desc-${i}`).value;
+                const date = document.getElementById(`date-${i}`).value; const qty = document.getElementById(`qty-${i}`).value;
+                const rh = document.getElementById(`rh-${i}`).value; const umur = parseInt(document.getElementById(`umur-${i}`).innerText);
                 
                 if(code || date || qty) {
-                    if(!code || !date || !qty || !rh || desc === 'TIDAK DITEMUKAN') { hasError = true; break; }
+                    if(!code || !date || !qty || !rh || desc === 'TIDAK DITEMUKAN' || desc === 'Mencari...') { hasError = true; break; }
                     if(umur <= 15) hasWarning = true;
-                    entries.push({
-                        nik, petugas: nama, nomor_rak: rak,
-                        barcode: document.getElementById(`real-bcd-${i}`).value || code,
-                        plu: document.getElementById(`real-plu-${i}`).value || code,
-                        deskripsi: desc, tgl_expired: date, qty, rh,
-                        tgl_tarik: document.getElementById(`tarik-${i}`).value,
-                        umur_produk: umur
-                    });
+                    entries.push({ nik, petugas: nama, nomor_rak: rak, barcode: document.getElementById(`real-bcd-${i}`).value || code, plu: document.getElementById(`real-plu-${i}`).value || code, deskripsi: desc, tgl_expired: date, qty, rh, tgl_tarik: document.getElementById(`tarik-${i}`).value, umur_produk: umur });
                 }
             }
-            
             if(hasError) return showToast('error', 'Lengkapi data baris yg terisi');
             if(entries.length === 0) return showToast('info', 'Tidak ada data valid');
             
-            const res = await fetchAPI('saveExpired', entries, 'POST');
+            const res = await fetchAPI('saveExpired', entries, 'POST'); // Panggil backend (otomatis nimpa duplikat)
             if(res && res.status === 'success') {
+                hasUnsavedData = false; localStorage.removeItem(CACHE_DRAFT);
+                executeReset(); 
+                
+                // Segera tarik data yang baru saja disimpan!
+                await backgroundSyncAllWithLoader(); 
                 Swal.fire({title: 'Berhasil', text: 'Data Expired Disimpan', icon: 'success'});
-                
-                // CRITICAL FIX: Data aman tersimpan, Hapus Draft Cache
-                hasUnsavedData = false;
-                localStorage.removeItem(CACHE_DRAFT);
-                
-                executeReset(); // Reset silent
-                loadAllData(true); // Auto sync tabel belakang layar
             }
         }
         
         async function handleSubmitProduk(e) {
             e.preventDefault();
-            const barcode = document.getElementById('new-code').value.trim();
-            const plu = document.getElementById('new-plu').value.trim();
-            const desc = document.getElementById('new-desc').value.trim().toUpperCase();
-            const rh = document.getElementById('new-rh').value;
-
+            const barcode = document.getElementById('new-code').value.trim(); const plu = document.getElementById('new-plu').value.trim();
+            const desc = document.getElementById('new-desc').value.trim().toUpperCase(); const rh = document.getElementById('new-rh').value;
             if(!barcode || !plu || !desc || !rh) return showToast('warning', 'Semua kolom wajib diisi');
 
             let existing = globalProducts.find(p => p.barcode === barcode || p.plu === plu);
@@ -898,34 +714,24 @@
                 if(res && res.status === 'success') { 
                     Swal.fire('Sukses', actionType === 'update' ? 'Produk Diupdate' : 'Produk Ditambahkan', 'success'); 
                     e.target.reset(); 
-                    const resProd = await fetchAPI('getAllProducts', {}, 'GET', true);
-                    if(resProd?.status === 'success') {
-                        localStorage.setItem(CACHE_PROD, JSON.stringify(resProd.data));
-                        globalProducts = resProd.data;
-                    }
+                    
+                    // Optimistic update tanpa loading lama
+                    if (actionType === 'update') {
+                        let idx = globalProducts.findIndex(p => p.barcode === barcode || p.plu === plu);
+                        if(idx > -1) globalProducts[idx] = {barcode, plu, deskripsi: desc, rh};
+                    } else { globalProducts.push({barcode, plu, deskripsi: desc, rh}); }
+                    localStorage.setItem(CACHE_PROD, JSON.stringify(globalProducts));
                 }
             };
 
             if (existing) {
-                Swal.fire({
-                    title: 'Data Sudah Ada!',
-                    text: `Produk ini sudah terdaftar (${existing.deskripsi}). Mau mengganti/update datanya?`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Ya, Update',
-                    cancelButtonText: 'Tidak',
-                    confirmButtonColor: '#2563eb'
-                }).then((result) => {
-                    if (result.isConfirmed) sendData('update');
-                });
-            } else {
-                sendData('add'); 
-            }
+                Swal.fire({ title: 'Data Sudah Ada!', text: `Produk terdaftar (${existing.deskripsi}). Update datanya?`, icon: 'question', showCancelButton: true, confirmButtonText: 'Ya, Update', cancelButtonText: 'Tidak', confirmButtonColor: '#2563eb' })
+                .then((result) => { if (result.isConfirmed) sendData('update'); });
+            } else { sendData('add'); }
         }
 
-        // --- Update & Delete Logic ---
+        // --- UPDATE & DELETE (AUTO-SYNC HISTORY) ---
         function openEditModal(i) { currentEditItem=i; document.getElementById('edit-desc').innerText=i.desc; document.getElementById('edit-date').value=i.exp; document.getElementById('edit-qty').value=i.qty; document.getElementById('edit-modal').classList.remove('hidden'); }
-        
         async function saveEditExpired() { 
             const d=document.getElementById('edit-date').value; const q=document.getElementById('edit-qty').value; if(!d||!q)return; 
             const rh=parseInt(currentEditItem.rh); const e=new Date(d); const t=new Date(e); t.setDate(t.getDate()-rh); 
@@ -934,75 +740,35 @@
             
             document.getElementById('edit-modal').classList.add('hidden');
             const res = await fetchAPI('updateExpired',p,'POST'); 
-            if(res?.status === 'success') {
-                showToast('success', 'Data berhasil diupdate');
-                await loadAllData(true); 
-                await loadHistory(true); 
-            }
+            if(res?.status === 'success') { await backgroundSyncAllWithLoader(); showToast('success', 'Data berhasil diupdate'); }
         }
         
         async function deleteItem(i) { 
-            Swal.fire({
-                title: 'Tarik Barang?', 
-                text: 'Data ini akan dihapus dari sistem & tercatat di History', 
-                icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya, Tarik!'
-            }).then(async r => {
+            Swal.fire({ title: 'Tarik Barang?', text: 'Data akan dihapus & tercatat di History', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Ya, Tarik!' })
+            .then(async r => {
                 if(r.isConfirmed) {
                     const res = await fetchAPI('deleteExpired', {rowIndex: i.rowIndex}, 'POST'); 
-                    if(res?.status === 'success') {
-                        showToast('success', 'Barang berhasil ditarik');
-                        await loadAllData(true); 
-                        await loadHistory(true); 
-                    }
+                    if(res?.status === 'success') { await backgroundSyncAllWithLoader(); showToast('success', 'Barang ditarik'); }
                 }
             });
         }
 
-        // --- Utils & Helpers ---
-        function sortTable(tableId, n) { 
-            const table = document.getElementById(tableId); let switching = true, dir = "asc", switchcount = 0;
-            while (switching) {
-                switching = false; const rows = table.rows;
-                for (let i = 1; i < (rows.length - 1); i++) {
-                    let shouldSwitch = false; const x = rows[i].getElementsByTagName("TD")[n]; const y = rows[i + 1].getElementsByTagName("TD")[n];
-                    let xVal = x.innerText.toLowerCase(); let yVal = y.innerText.toLowerCase(); let xNum = parseFloat(xVal), yNum = parseFloat(yVal);
-                    if (!isNaN(xNum) && !isNaN(yNum)) { if (dir == "asc" && xNum > yNum) shouldSwitch = true; else if (dir == "desc" && xNum < yNum) shouldSwitch = true; } 
-                    else { if (dir == "asc" && xVal > yVal) shouldSwitch = true; else if (dir == "desc" && xVal < yVal) shouldSwitch = true; }
-                    if (shouldSwitch) { rows[i].parentNode.insertBefore(rows[i + 1], rows[i]); switching = true; switchcount++; break; }
-                }
-                if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; }
-            }
-        }
+        // --- UTILS ---
+        function sortTable(tableId, n) { /* Sort table Logic */ const table = document.getElementById(tableId); let switching = true, dir = "asc", switchcount = 0; while (switching) { switching = false; const rows = table.rows; for (let i = 1; i < (rows.length - 1); i++) { let shouldSwitch = false; const x = rows[i].getElementsByTagName("TD")[n]; const y = rows[i + 1].getElementsByTagName("TD")[n]; let xVal = x.innerText.toLowerCase(); let yVal = y.innerText.toLowerCase(); let xNum = parseFloat(xVal), yNum = parseFloat(yVal); if (!isNaN(xNum) && !isNaN(yNum)) { if (dir == "asc" && xNum > yNum) shouldSwitch = true; else if (dir == "desc" && xNum < yNum) shouldSwitch = true; } else { if (dir == "asc" && xVal > yVal) shouldSwitch = true; else if (dir == "desc" && xVal < yVal) shouldSwitch = true; } if (shouldSwitch) { rows[i].parentNode.insertBefore(rows[i + 1], rows[i]); switching = true; switchcount++; break; } } if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; } } }
         function filterTable(tbodyId, inputId) { const filter = document.getElementById(inputId).value.toUpperCase(); const rows = document.getElementById(tbodyId).getElementsByTagName('tr'); for(let row of rows) { row.style.display = row.innerText.toUpperCase().indexOf(filter) > -1 ? "" : "none"; } }
         function exportToExcel(tableId) { const t = document.getElementById(tableId); XLSX.writeFile(XLSX.utils.table_to_book(t), 'Rekap_Data.xlsx'); }
         
         function generateInputRows() {
             const tbody = document.getElementById('input-tbody'); let rows = '';
             for(let i=0; i<MAX_ROWS; i++) {
-                rows += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-800 border-b dark:border-gray-700">
-                    <td class="p-2 text-center">${i+1}</td>
-                    <td class="p-2"><input type="number" id="code-${i}" class="w-full min-w-input p-1 border rounded dark:bg-gray-700 font-mono" onchange="handleProductInput(${i}, this.value)"><input type="hidden" id="real-plu-${i}"><input type="hidden" id="real-bcd-${i}"></td>
-                    <td class="p-2 text-center"><button onclick="openScanner(${i})" class="text-gray-500 hover:text-primary"><i class="fa-solid fa-camera"></i></button></td>
-                    <td class="p-2"><input type="text" id="desc-${i}" class="w-full min-w-desc p-1 bg-gray-100 dark:bg-gray-600 rounded text-xs font-bold" readonly></td>
-                    <td class="p-2"><input type="date" id="date-${i}" class="w-full min-w-input p-1 border rounded dark:bg-gray-700 text-sm" onchange="calculateRow(${i})"></td>
-                    <td class="p-2"><input type="number" id="qty-${i}" class="w-full min-w-qty p-1 border rounded dark:bg-gray-700 text-center" oninput="saveDraft()"></td>
-                    <td class="p-2"><input type="text" id="rh-${i}" class="w-full min-w-rh p-1 bg-gray-100 dark:bg-gray-600 rounded text-center text-xs" readonly></td>
-                    <td class="p-2"><input type="text" id="tarik-${i}" class="w-full min-w-input p-1 bg-gray-100 dark:bg-gray-600 rounded text-center text-xs font-bold" readonly></td>
-                    <td class="p-2"><div id="umur-${i}">-</div></td></tr>`;
-            } 
-            tbody.innerHTML = rows;
+                rows += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-800 border-b dark:border-gray-700"><td class="p-2 text-center">${i+1}</td><td class="p-2"><input type="number" id="code-${i}" class="w-full min-w-input p-1 border rounded dark:bg-gray-700 font-mono" onchange="handleProductInput(${i}, this.value)"><input type="hidden" id="real-plu-${i}"><input type="hidden" id="real-bcd-${i}"></td><td class="p-2 text-center"><button onclick="openScanner(${i})" class="text-gray-500 hover:text-primary"><i class="fa-solid fa-camera"></i></button></td><td class="p-2"><input type="text" id="desc-${i}" class="w-full min-w-desc p-1 bg-gray-100 dark:bg-gray-600 rounded text-xs font-bold" readonly></td><td class="p-2"><input type="date" id="date-${i}" class="w-full min-w-input p-1 border rounded dark:bg-gray-700 text-sm" onchange="calculateRow(${i})"></td><td class="p-2"><input type="number" id="qty-${i}" class="w-full min-w-qty p-1 border rounded dark:bg-gray-700 text-center" oninput="saveDraft()"></td><td class="p-2"><input type="text" id="rh-${i}" class="w-full min-w-rh p-1 bg-gray-100 dark:bg-gray-600 rounded text-center text-xs" readonly></td><td class="p-2"><input type="text" id="tarik-${i}" class="w-full min-w-input p-1 bg-gray-100 dark:bg-gray-600 rounded text-center text-xs font-bold" readonly></td><td class="p-2"><div id="umur-${i}">-</div></td></tr>`;
+            } tbody.innerHTML = rows;
         }
 
         function renderRak(data) { const dl = document.getElementById('rak-list-options'); dl.innerHTML = ''; [...data.food, ...data.nonfood].forEach(r => { const opt = document.createElement('option'); opt.value = r; dl.appendChild(opt); }); }
-        
-        function showWajibTarik() { 
-            const tbody = document.getElementById('notif-tbody'); tbody.innerHTML = ''; const filtered = globalExpiredData.filter(i => parseInt(i.umur) <= 15).sort((a,b) => a.umur - b.umur);
-            if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500">Aman! Tidak ada barang wajib tarik.</td></tr>'; } 
-            else { tbody.innerHTML = filtered.map(i => { let badgeClass = parseInt(i.umur) < 8 ? 'text-red-600' : 'text-yellow-600'; return `<tr class="border-b dark:border-gray-700"><td class="p-2 font-mono font-bold">${i.rak}</td><td class="p-2 text-xs">${i.desc}<br><span class="text-gray-400">${i.plu}</span></td><td class="p-2 font-bold ${badgeClass}">${i.umur} Hari</td></tr>`; }).join(''); }
-            document.getElementById('notif-modal').classList.remove('hidden');
-        }
+        function showWajibTarik() { const tbody = document.getElementById('notif-tbody'); tbody.innerHTML = ''; const filtered = globalExpiredData.filter(i => parseInt(i.umur) <= 15).sort((a,b) => a.umur - b.umur); if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-500">Aman! Tidak ada barang wajib tarik.</td></tr>'; } else { tbody.innerHTML = filtered.map(i => { let badgeClass = parseInt(i.umur) < 8 ? 'text-red-600' : 'text-yellow-600'; return `<tr class="border-b dark:border-gray-700"><td class="p-2 font-mono font-bold">${i.rak}</td><td class="p-2 text-xs">${i.desc}<br><span class="text-gray-400">${i.plu}</span></td><td class="p-2 font-bold ${badgeClass}">${i.umur} Hari</td></tr>`; }).join(''); } document.getElementById('notif-modal').classList.remove('hidden'); }
 
-        // --- Scanner Logic ---
+        // --- SCANNER ---
         async function openScanner(idx) { currentActiveRow = idx; document.getElementById('camera-modal').classList.remove('hidden'); await new Promise(r=>setTimeout(r,100)); if(html5QrcodeScanner) try{await html5QrcodeScanner.stop(); html5QrcodeScanner.clear()}catch(e){}; html5QrcodeScanner = new Html5Qrcode("reader"); try{await html5QrcodeScanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess)}catch(e){closeScanner()} }
         async function openScannerForProduct() { currentActiveRow='NEW_PROD'; document.getElementById('camera-modal').classList.remove('hidden'); await new Promise(r=>setTimeout(r,100)); if(html5QrcodeScanner) try{await html5QrcodeScanner.stop(); html5QrcodeScanner.clear()}catch(e){}; html5QrcodeScanner = new Html5Qrcode("reader"); try{await html5QrcodeScanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess)}catch(e){closeScanner()} }
         function onScanSuccess(t) { let c=String(t).trim(); if(c.length>1)c=c.substring(0,c.length-1); if(c.startsWith('0'))c=c.substring(1); closeScanner(); if(currentActiveRow==='NEW_PROD')document.getElementById('new-code').value=c; else{document.getElementById('code-'+currentActiveRow).value=c; handleProductInput(currentActiveRow,c);} }

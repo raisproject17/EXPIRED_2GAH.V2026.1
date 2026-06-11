@@ -121,7 +121,6 @@
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
                         <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 flex justify-between items-center">
                             <h3 class="font-bold text-lg"><i class="fa-solid fa-list-check mr-2 text-primary"></i>Status Pengerjaan Rak</h3>
-                            <!-- ICON DITAMBAHKAN ID sync-icon-dash UNTUK ANIMASI -->
                             <button onclick="refreshRakStatus()" class="text-blue-500 hover:text-blue-700 transition" title="Refresh Status Rak"><i id="sync-icon-dash" class="fa-solid fa-rotate-right text-lg"></i></button>
                         </div>
                         <div class="flex border-b border-gray-200 dark:border-gray-700">
@@ -159,7 +158,7 @@
                             <div><label class="block text-xs font-bold text-gray-500 mb-1">NIK (Wajib)</label><input type="number" id="input-nik" class="w-full p-2 border rounded dark:bg-gray-700" placeholder="Isi NIK..." onchange="lookupKaryawan()"></div>
                             <div><label class="block text-xs font-bold text-gray-500 mb-1">Nama</label><input type="text" id="input-nama" class="w-full p-2 bg-gray-100 dark:bg-gray-600 rounded" readonly></div>
                             <div><label class="block text-xs font-bold text-gray-500 mb-1">Toko</label><input type="text" id="input-toko" class="w-full p-2 bg-gray-100 dark:bg-gray-600 rounded" readonly></div>
-                            <div><label class="block text-xs font-bold text-gray-500 mb-1">Rak (Wajib)</label><input type="text" id="input-rak" list="rak-list-options" class="w-full p-2 border rounded dark:bg-gray-700 uppercase" placeholder="Isi Rak..." oninput="this.value = this.value.toUpperCase()"><datalist id="rak-list-options"></datalist></div>
+                            <div><label class="block text-xs font-bold text-gray-500 mb-1">Rak (Wajib)</label><input type="text" id="input-rak" list="rak-list-options" class="w-full p-2 border rounded dark:bg-gray-700 uppercase" placeholder="Isi Rak..." oninput="this.value = this.value.toUpperCase()"></div>
                         </div>
                         <div id="input-area" class="hidden">
                             <div class="overflow-x-auto mb-4 border rounded-lg dark:border-gray-700">
@@ -170,7 +169,7 @@
                                     <tbody id="input-tbody"></tbody>
                                 </table>
                             </div>
-                            <div class="flex justify-end gap-3"><button onclick="resetInputForm()" class="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Reset</button><button onclick="saveBatchData()" class="px-6 py-2 bg-primary text-white rounded hover:bg-blue-600 font-bold">Simpan</button></div>
+                            <div class="flex justify-end gap-3"><button onclick="resetInputForm()" class="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-bold">Reset</button><button onclick="saveBatchData()" class="px-6 py-2 bg-primary text-white rounded hover:bg-blue-600 font-bold shadow-md"><i class="fa-solid fa-save mr-1"></i> Simpan</button></div>
                         </div>
                         <div id="input-overlay" class="text-center py-10 text-gray-400 border-2 border-dashed rounded-lg"><i class="fa-solid fa-lock text-3xl mb-2"></i><p>Isi NIK dan RAK untuk membuka form</p></div>
                     </div>
@@ -280,12 +279,14 @@
         const MAX_ROWS = 20;
         const CACHE_RAK = 'monitor_exp_rak';
         const CACHE_EXP = 'monitor_exp_data';
-        const CACHE_PROD = 'monitor_exp_products'; // Cache Database Local
+        const CACHE_PROD = 'monitor_exp_products';
+        const CACHE_DRAFT = 'monitor_exp_draft'; // Cache untuk inputan draft
         
         let currentActiveRow = null;
         let html5QrcodeScanner = null;
         let isTorchOn = false;
         let currentEditItem = null;
+        let hasUnsavedData = false; // Flag status data yang belum disave
         
         // Data Local
         let globalExpiredData = [];
@@ -297,7 +298,7 @@
             const box = document.getElementById('loading-box');
             document.getElementById('loading-text').innerText = text;
             overlay.classList.remove('hidden', 'pointer-events-none');
-            void overlay.offsetWidth; // trigger CSS transition reflow
+            void overlay.offsetWidth; 
             overlay.classList.remove('opacity-0');
             box.classList.remove('scale-95');
         }
@@ -316,11 +317,54 @@
         });
         function showToast(icon, title) { Toast.fire({ icon: icon, title: title }); }
 
-        // --- STREAMING_CHUNK:Init & Event Listeners ---
+        // --- INIT & NAVIGATION TRAP (ANTI BACK) ---
+        window.addEventListener('load', () => {
+            // Setup history trap agar tombol back tidak langsung menutup aplikasi
+            history.pushState({ page: 'app' }, '', window.location.href);
+            loadDraft(); // Pulihkan data yang ter-cache jika ada
+        });
+
+        // Menangkap tombol Back/Swipe Back di HP
+        window.addEventListener('popstate', function (event) {
+            if (hasUnsavedData) {
+                // Trap kembali jika masih ada data unsaved
+                history.pushState({ page: 'app' }, '', window.location.href);
+                
+                Swal.fire({
+                    title: 'Simpan Data Input?',
+                    text: 'Anda menekan kembali namun ada data input yang belum tersimpan!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    showDenyButton: true,
+                    confirmButtonText: '<i class="fa-solid fa-save"></i> Ya, Simpan',
+                    denyButtonText: '<i class="fa-solid fa-trash"></i> Buang Data',
+                    cancelButtonText: 'Batal Keluar',
+                    confirmButtonColor: '#2563eb',
+                    denyButtonColor: '#d33'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        saveBatchData();
+                    } else if (result.isDenied) {
+                        executeReset(); // Reset data diam-diam
+                        history.back(); // Lanjutkan proses Back browser
+                    }
+                });
+            }
+        });
+
+        // Mencegah refresh (F5) / tutup tab tanpa peringatan
+        window.addEventListener('beforeunload', function (e) {
+            if (hasUnsavedData) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             generateInputRows();
             initDashboard(); 
             
+            // Trigger auto-save draft setiap kali RAK diisi
             document.getElementById('input-rak').addEventListener('input', (e) => {
                 const nik = document.getElementById('input-nik').value;
                 if(nik && e.target.value.length >= 2) {
@@ -330,14 +374,77 @@
                     document.getElementById('input-area').classList.add('hidden');
                     document.getElementById('input-overlay').classList.remove('hidden');
                 }
+                saveDraft();
             });
+
+            document.getElementById('input-nik').addEventListener('input', saveDraft);
         });
+
+        // --- AUTO-SAVE DRAFT LOGIC ---
+        function saveDraft() {
+            const nik = document.getElementById('input-nik').value;
+            const nama = document.getElementById('input-nama').value;
+            const toko = document.getElementById('input-toko').value;
+            const rak = document.getElementById('input-rak').value;
+            let rows = [];
+            let hasData = false;
+            
+            for(let i=0; i<MAX_ROWS; i++) {
+                let code = document.getElementById(`code-${i}`)?.value || '';
+                let date = document.getElementById(`date-${i}`)?.value || '';
+                let qty = document.getElementById(`qty-${i}`)?.value || '';
+                rows.push({ code, date, qty });
+                if (code || date || qty) hasData = true;
+            }
+            
+            hasUnsavedData = hasData || rak !== ''; // Jika form terisi sesuatu
+            
+            if (hasUnsavedData) {
+                localStorage.setItem(CACHE_DRAFT, JSON.stringify({nik, nama, toko, rak, rows}));
+            } else {
+                localStorage.removeItem(CACHE_DRAFT);
+            }
+        }
+
+        function loadDraft() {
+            const draftStr = localStorage.getItem(CACHE_DRAFT);
+            if(draftStr) {
+                try {
+                    const draft = JSON.parse(draftStr);
+                    if(draft.nik) {
+                        document.getElementById('input-nik').value = draft.nik;
+                        if(draft.nama) document.getElementById('input-nama').value = draft.nama;
+                        if(draft.toko) document.getElementById('input-toko').value = draft.toko;
+                    }
+                    if(draft.rak) {
+                        document.getElementById('input-rak').value = draft.rak;
+                        document.getElementById('input-area').classList.remove('hidden');
+                        document.getElementById('input-overlay').classList.add('hidden');
+                    }
+                    for(let i=0; i<MAX_ROWS; i++) {
+                        if(draft.rows[i]) {
+                            if(draft.rows[i].code) {
+                                document.getElementById(`code-${i}`).value = draft.rows[i].code;
+                                handleProductInput(i, draft.rows[i].code, true);
+                            }
+                            if(draft.rows[i].date) document.getElementById(`date-${i}`).value = draft.rows[i].date;
+                            if(draft.rows[i].qty) document.getElementById(`qty-${i}`).value = draft.rows[i].qty;
+                            if(draft.rows[i].date && draft.rows[i].code) calculateRow(i);
+                        }
+                    }
+                    if(draft.rak || draft.rows.some(r => r.code || r.date || r.qty)) {
+                        hasUnsavedData = true;
+                        showToast('info', 'Draft input sebelumnya dipulihkan');
+                        router('input'); // Arahkan ke tab input secara otomatis
+                    }
+                } catch(e) {}
+            }
+        }
 
         const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-        // --- STREAMING_CHUNK:Core Logic & Background Sync ---
+        // --- Core Logic & Background Sync ---
         async function initDashboard() {
-            // Load Local Cache First (Agar Web Terasa Super Cepat)
             const cRak = localStorage.getItem(CACHE_RAK);
             const cExp = localStorage.getItem(CACHE_EXP);
             const cProd = localStorage.getItem(CACHE_PROD);
@@ -357,12 +464,10 @@
                 renderTableData(data); 
             }
             
-            // Sync background (tanpa ganggu UI)
             backgroundSyncAll();
         }
 
         async function backgroundSyncAll() {
-            // Kita download Produk, Rak, Expired, dan History sekaligus di belakang layar!
             const [resRak, resExp, resProd, resHist] = await Promise.all([
                 fetchAPI('getRakData', {}, 'GET', true),
                 fetchAPI('getAllExpired', {}, 'GET', true),
@@ -395,7 +500,7 @@
 
         async function refreshRakStatus() {
             const icon = document.getElementById('sync-icon-dash');
-            if(icon) icon.classList.add('fa-spin'); // Mulai animasi memutar
+            if(icon) icon.classList.add('fa-spin'); 
 
             try {
                 const [resRak, resExp] = await Promise.all([
@@ -415,7 +520,7 @@
                     renderTableData(data);
                 }
             } finally {
-                if(icon) icon.classList.remove('fa-spin'); // Hentikan animasi saat selesai atau error
+                if(icon) icon.classList.remove('fa-spin'); 
             }
         }
 
@@ -434,7 +539,7 @@
             if(res?.status === 'success') renderHistory(res.data);
         }
 
-        // --- STREAMING_CHUNK:Rendering Functions ---
+        // --- Rendering Functions ---
         function recalculateAge(data) {
             const today = new Date(); today.setHours(0,0,0,0);
             return data.map(item => {
@@ -558,7 +663,7 @@
             }).join('');
         }
 
-        // --- STREAMING_CHUNK:Navigation ---
+        // --- Navigation ---
         function router(p) {
             document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden')); 
             document.querySelectorAll('.nav-item').forEach(el => {
@@ -578,7 +683,7 @@
             target.classList.add('animate-fade-in');
 
             if(p === 'all-data' && globalExpiredData.length > 0) renderTableData(globalExpiredData);
-            if(p === 'rekap') loadHistory(true); // Always refresh local history silently when opened
+            if(p === 'rekap') loadHistory(true); 
         }
 
         function switchDashTab(tab) {
@@ -594,9 +699,36 @@
         }
 
         function toggleDarkMode() { document.documentElement.classList.toggle('dark'); }
-        function resetInputForm() { document.getElementById('input-rak').value=''; document.getElementById('input-area').classList.add('hidden'); document.getElementById('input-overlay').classList.remove('hidden'); generateInputRows(); }
+        
+        function resetInputForm(silent = false) {
+            if (!silent && hasUnsavedData) {
+                Swal.fire({
+                    title: 'Reset Form?',
+                    text: 'Semua data input belum tersimpan akan dihapus.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Reset',
+                    cancelButtonText: 'Batal'
+                }).then((res) => {
+                    if (res.isConfirmed) executeReset();
+                });
+            } else {
+                executeReset();
+            }
+        }
 
-        // --- STREAMING_CHUNK:API ---
+        function executeReset() {
+            document.getElementById('input-rak').value=''; 
+            document.getElementById('input-area').classList.add('hidden'); 
+            document.getElementById('input-overlay').classList.remove('hidden'); 
+            generateInputRows();
+            
+            // Hapus cache dan reset flag
+            hasUnsavedData = false;
+            localStorage.removeItem(CACHE_DRAFT);
+        }
+
+        // --- API ---
         async function fetchAPI(action, params = {}, method = 'GET', silent = false) {
             if(!silent) showLoader(); 
             try {
@@ -620,7 +752,7 @@
             }
         }
 
-        // --- STREAMING_CHUNK:Submission Logic ---
+        // --- Submission Logic & DEDUPLICATION FORM ---
         async function lookupKaryawan() {
             const nik = document.getElementById('input-nik').value;
             if(!nik) return;
@@ -628,15 +760,36 @@
             if(res && res.found) {
                 document.getElementById('input-nama').value = res.data.nama;
                 document.getElementById('input-toko').value = `${res.data.kode_toko} - ${res.data.nama_toko}`;
+                saveDraft();
             } else showToast('error', 'NIK Tidak Ditemukan');
         }
 
-        // LOCAL SEARCH PRODUCT (0 Detik Delay)
-        function handleProductInput(rowIdx, code) {
+        function handleProductInput(rowIdx, code, skipDraftSave = false) {
             if(!code) return;
             
             let searchCode = String(code).trim().toUpperCase();
             let cleanSearch = searchCode.replace(/^0+/, ''); 
+
+            // ANTI DUPLIKAT: Cek apakah Barcode/PLU ini sudah diisi di baris lain pada form ini
+            for(let i=0; i<MAX_ROWS; i++) {
+                if(i !== rowIdx) {
+                    let otherCode = document.getElementById(`code-${i}`).value;
+                    if(otherCode && (otherCode.toUpperCase() === searchCode || otherCode.replace(/^0+/, '') === cleanSearch)) {
+                        // Jika ketemu duplikat, HAPUS baris lama secara otomatis
+                        document.getElementById(`code-${i}`).value = '';
+                        document.getElementById(`desc-${i}`).value = '';
+                        document.getElementById(`date-${i}`).value = '';
+                        document.getElementById(`qty-${i}`).value = '';
+                        document.getElementById(`rh-${i}`).value = '';
+                        document.getElementById(`tarik-${i}`).value = '';
+                        document.getElementById(`real-plu-${i}`).value = '';
+                        document.getElementById(`real-bcd-${i}`).value = '';
+                        document.getElementById(`umur-${i}`).innerText = '-';
+                        document.getElementById(`umur-${i}`).className = 'p-2 w-16 text-center status-badge border font-bold';
+                        showToast('info', `Duplikat: Item dipindahkan dari baris ${i+1}`);
+                    }
+                }
+            }
 
             // Cari di variabel lokal (Tidak butuh internet!)
             let found = globalProducts.find(p => {
@@ -652,14 +805,15 @@
                 document.getElementById(`rh-${rowIdx}`).value = found.rh;
                 document.getElementById(`real-plu-${rowIdx}`).value = found.plu || "";
                 document.getElementById(`real-bcd-${rowIdx}`).value = found.barcode || code;
-                calculateRow(rowIdx);
+                calculateRow(rowIdx, skipDraftSave);
             } else {
                 document.getElementById(`desc-${rowIdx}`).value = "TIDAK DITEMUKAN";
                 document.getElementById(`rh-${rowIdx}`).value = "";
             }
+            if(!skipDraftSave) saveDraft();
         }
 
-        function calculateRow(i) {
+        function calculateRow(i, skipDraftSave = false) {
             const dateStr = document.getElementById(`date-${i}`).value;
             const rh = parseInt(document.getElementById(`rh-${i}`).value);
             if(dateStr && rh) {
@@ -676,6 +830,7 @@
                 else if(diff >= 8) el.classList.add('bg-yellow-custom');
                 else el.classList.add('bg-red-custom');
             }
+            if(!skipDraftSave) saveDraft();
         }
 
         async function saveBatchData() {
@@ -716,7 +871,12 @@
             const res = await fetchAPI('saveExpired', entries, 'POST');
             if(res && res.status === 'success') {
                 Swal.fire({title: 'Berhasil', text: 'Data Expired Disimpan', icon: 'success'});
-                resetInputForm();
+                
+                // CRITICAL FIX: Data aman tersimpan, Hapus Draft Cache
+                hasUnsavedData = false;
+                localStorage.removeItem(CACHE_DRAFT);
+                
+                executeReset(); // Reset silent
                 loadAllData(true); // Auto sync tabel belakang layar
             }
         }
@@ -730,17 +890,14 @@
 
             if(!barcode || !plu || !desc || !rh) return showToast('warning', 'Semua kolom wajib diisi');
 
-            // Cek apakah produk sudah ada di database lokal
             let existing = globalProducts.find(p => p.barcode === barcode || p.plu === plu);
 
             const sendData = async (actionType) => {
                 const data = { barcode, plu, deskripsi: desc, rh, action_type: actionType };
-                // Memanggil endpoint baru saveProduct (yang handle Add & Update)
                 const res = await fetchAPI('saveProduct', data, 'POST');
                 if(res && res.status === 'success') { 
                     Swal.fire('Sukses', actionType === 'update' ? 'Produk Diupdate' : 'Produk Ditambahkan', 'success'); 
                     e.target.reset(); 
-                    // Auto sync tabel produk lokal agar update
                     const resProd = await fetchAPI('getAllProducts', {}, 'GET', true);
                     if(resProd?.status === 'success') {
                         localStorage.setItem(CACHE_PROD, JSON.stringify(resProd.data));
@@ -749,7 +906,6 @@
                 }
             };
 
-            // Menampilkan Opsi Update jika Produk ditemukan
             if (existing) {
                 Swal.fire({
                     title: 'Data Sudah Ada!',
@@ -763,11 +919,11 @@
                     if (result.isConfirmed) sendData('update');
                 });
             } else {
-                sendData('add'); // Jalur normal (Tambah baru)
+                sendData('add'); 
             }
         }
 
-        // --- STREAMING_CHUNK:Update & Delete Logic ---
+        // --- Update & Delete Logic ---
         function openEditModal(i) { currentEditItem=i; document.getElementById('edit-desc').innerText=i.desc; document.getElementById('edit-date').value=i.exp; document.getElementById('edit-qty').value=i.qty; document.getElementById('edit-modal').classList.remove('hidden'); }
         
         async function saveEditExpired() { 
@@ -780,8 +936,8 @@
             const res = await fetchAPI('updateExpired',p,'POST'); 
             if(res?.status === 'success') {
                 showToast('success', 'Data berhasil diupdate');
-                await loadAllData(true); // Sinkronisasi tabel utama ulang
-                await loadHistory(true); // Tambahan: Update history juga karena data lama masuk history
+                await loadAllData(true); 
+                await loadHistory(true); 
             }
         }
         
@@ -795,7 +951,6 @@
                     const res = await fetchAPI('deleteExpired', {rowIndex: i.rowIndex}, 'POST'); 
                     if(res?.status === 'success') {
                         showToast('success', 'Barang berhasil ditarik');
-                        // CRITICAL FIX: Update Kedua Data Secara Bersamaan Tanpa Load Page
                         await loadAllData(true); 
                         await loadHistory(true); 
                     }
@@ -803,7 +958,7 @@
             });
         }
 
-        // --- STREAMING_CHUNK:Utils & Helpers ---
+        // --- Utils & Helpers ---
         function sortTable(tableId, n) { 
             const table = document.getElementById(tableId); let switching = true, dir = "asc", switchcount = 0;
             while (switching) {
@@ -820,6 +975,7 @@
         }
         function filterTable(tbodyId, inputId) { const filter = document.getElementById(inputId).value.toUpperCase(); const rows = document.getElementById(tbodyId).getElementsByTagName('tr'); for(let row of rows) { row.style.display = row.innerText.toUpperCase().indexOf(filter) > -1 ? "" : "none"; } }
         function exportToExcel(tableId) { const t = document.getElementById(tableId); XLSX.writeFile(XLSX.utils.table_to_book(t), 'Rekap_Data.xlsx'); }
+        
         function generateInputRows() {
             const tbody = document.getElementById('input-tbody'); let rows = '';
             for(let i=0; i<MAX_ROWS; i++) {
@@ -829,12 +985,14 @@
                     <td class="p-2 text-center"><button onclick="openScanner(${i})" class="text-gray-500 hover:text-primary"><i class="fa-solid fa-camera"></i></button></td>
                     <td class="p-2"><input type="text" id="desc-${i}" class="w-full min-w-desc p-1 bg-gray-100 dark:bg-gray-600 rounded text-xs font-bold" readonly></td>
                     <td class="p-2"><input type="date" id="date-${i}" class="w-full min-w-input p-1 border rounded dark:bg-gray-700 text-sm" onchange="calculateRow(${i})"></td>
-                    <td class="p-2"><input type="number" id="qty-${i}" class="w-full min-w-qty p-1 border rounded dark:bg-gray-700 text-center"></td>
+                    <td class="p-2"><input type="number" id="qty-${i}" class="w-full min-w-qty p-1 border rounded dark:bg-gray-700 text-center" oninput="saveDraft()"></td>
                     <td class="p-2"><input type="text" id="rh-${i}" class="w-full min-w-rh p-1 bg-gray-100 dark:bg-gray-600 rounded text-center text-xs" readonly></td>
                     <td class="p-2"><input type="text" id="tarik-${i}" class="w-full min-w-input p-1 bg-gray-100 dark:bg-gray-600 rounded text-center text-xs font-bold" readonly></td>
                     <td class="p-2"><div id="umur-${i}">-</div></td></tr>`;
-            } tbody.innerHTML = rows;
+            } 
+            tbody.innerHTML = rows;
         }
+
         function renderRak(data) { const dl = document.getElementById('rak-list-options'); dl.innerHTML = ''; [...data.food, ...data.nonfood].forEach(r => { const opt = document.createElement('option'); opt.value = r; dl.appendChild(opt); }); }
         
         function showWajibTarik() { 
@@ -844,7 +1002,7 @@
             document.getElementById('notif-modal').classList.remove('hidden');
         }
 
-        // --- STREAMING_CHUNK:Scanner Logic ---
+        // --- Scanner Logic ---
         async function openScanner(idx) { currentActiveRow = idx; document.getElementById('camera-modal').classList.remove('hidden'); await new Promise(r=>setTimeout(r,100)); if(html5QrcodeScanner) try{await html5QrcodeScanner.stop(); html5QrcodeScanner.clear()}catch(e){}; html5QrcodeScanner = new Html5Qrcode("reader"); try{await html5QrcodeScanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess)}catch(e){closeScanner()} }
         async function openScannerForProduct() { currentActiveRow='NEW_PROD'; document.getElementById('camera-modal').classList.remove('hidden'); await new Promise(r=>setTimeout(r,100)); if(html5QrcodeScanner) try{await html5QrcodeScanner.stop(); html5QrcodeScanner.clear()}catch(e){}; html5QrcodeScanner = new Html5Qrcode("reader"); try{await html5QrcodeScanner.start({facingMode:"environment"},{fps:10,qrbox:250},onScanSuccess)}catch(e){closeScanner()} }
         function onScanSuccess(t) { let c=String(t).trim(); if(c.length>1)c=c.substring(0,c.length-1); if(c.startsWith('0'))c=c.substring(1); closeScanner(); if(currentActiveRow==='NEW_PROD')document.getElementById('new-code').value=c; else{document.getElementById('code-'+currentActiveRow).value=c; handleProductInput(currentActiveRow,c);} }

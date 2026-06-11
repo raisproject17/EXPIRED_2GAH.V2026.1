@@ -512,7 +512,7 @@
             }
         }
 
-        // --- SUBMISSION & OPTIMISTIC UI ---
+        // --- SUBMISSION & DEDUPLICATION FORM ---
         async function lookupKaryawan() {
             const nik = document.getElementById('input-nik').value; if(!nik) return;
             const res = await fetchAPI('getKaryawan', {nik}, 'GET', true);
@@ -522,7 +522,8 @@
 
         async function handleProductInput(rowIdx, code, skipDraftSave = false) {
             if(!code) return;
-            let searchCode = String(code).trim().toUpperCase(); let cleanSearch = searchCode.replace(/^0+/, ''); 
+            let searchCode = String(code).trim().toUpperCase(); 
+            let cleanSearch = searchCode.replace(/^0+/, ''); 
 
             // Hapus duplikat dalam form
             for(let i=0; i<MAX_ROWS; i++) {
@@ -535,19 +536,38 @@
                 }
             }
 
+            // Ubah status jadi mencari agar user tahu sistem sedang bekerja
+            document.getElementById(`desc-${rowIdx}`).value = "Mencari...";
+
             // Cari lokal instan
             let found = globalProducts.find(p => {
-                let bcd = String(p.barcode).trim().toUpperCase(); let plu = String(p.plu).trim().toUpperCase();
+                let bcd = String(p.barcode || '').trim().toUpperCase(); 
+                let plu = String(p.plu || '').trim().toUpperCase();
                 return bcd === searchCode || plu === searchCode || (bcd.replace(/^0+/,'') === cleanSearch && cleanSearch !== '') || (plu.replace(/^0+/,'') === cleanSearch && cleanSearch !== '');
             });
 
-            if(found) fillProductRow(rowIdx, found, code, skipDraftSave);
-            else {
-                document.getElementById(`desc-${rowIdx}`).value = "Mencari...";
+            if(found) {
+                fillProductRow(rowIdx, found, code, skipDraftSave);
+            } else {
+                // Fallback ke server jika belum ter-cache
                 const res = await fetchAPI('getProduct', {code: searchCode}, 'GET', true);
-                if (res && res.found) { fillProductRow(rowIdx, res.data, code, skipDraftSave); globalProducts.push(res.data); } 
-                else { document.getElementById(`desc-${rowIdx}`).value = "TIDAK DITEMUKAN"; document.getElementById(`rh-${rowIdx}`).value = ""; }
+                
+                if (res === null) {
+                    // Jika fetch gagal (karena internet / server error)
+                    document.getElementById(`desc-${rowIdx}`).value = "GAGAL KONEKSI";
+                    document.getElementById(`rh-${rowIdx}`).value = "";
+                    showToast('error', 'Koneksi ke server terputus');
+                } else if (res && res.found) {
+                    // Jika ketemu di server
+                    fillProductRow(rowIdx, res.data, code, skipDraftSave);
+                    globalProducts.push(res.data); // Simpan ke memory agar pencarian berikutnya instan
+                } else {
+                    // Jika benar-benar tidak ada di database
+                    document.getElementById(`desc-${rowIdx}`).value = "TIDAK DITEMUKAN";
+                    document.getElementById(`rh-${rowIdx}`).value = "";
+                }
             }
+            if(!skipDraftSave) saveDraft();
         }
 
         function fillProductRow(rowIdx, product, scannedCode, skipDraftSave) {

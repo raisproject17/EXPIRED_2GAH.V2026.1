@@ -239,7 +239,7 @@
     </div>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwGEiqcYqK2V4fZPkdDbvgdniO7FLj0MOa2TiKA8Ssdst-_KJqHtHu-nsHoOveQZC0M0w/exec"; 
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyC_rzfd7K6VZW6p7hPscS89ib27AVK8k1c7Hh4a9iVT4LaKJJgP1FoePhHfNDmnXuAeA/exec"; 
         const MAX_ROWS = 20;
         const CACHE_RAK = 'monitor_exp_rak';
         const CACHE_EXP = 'monitor_exp_data';
@@ -348,6 +348,22 @@
                 // 1 Hit All Data = Cepat!
                 const res = await fetchAPI('getInitialSync', {}, 'GET', true); 
 
+                // FALLBACK: Jika GAS masih versi lama, ambil satu per satu
+                if (res && res.status === 'error' && (res.message.includes('Unknown Route') || res.message.includes('Action API tidak ditemukan'))) {
+                    console.warn("API getInitialSync tidak ditemukan. Fallback ke versi lama. Harap Deploy Ulang GAS!");
+                    const [resRak, resExp, resProd, resHist] = await Promise.all([
+                        fetchAPI('getRakData', {}, 'GET', true),
+                        fetchAPI('getAllExpired', {}, 'GET', true),
+                        fetchAPI('getAllProducts', {}, 'GET', true),
+                        fetchAPI('getHistory', {}, 'GET', true)
+                    ]);
+                    if(resRak?.status === 'success') { localStorage.setItem(CACHE_RAK, JSON.stringify(resRak.data)); renderRak(resRak.data); }
+                    if(resProd?.status === 'success') { localStorage.setItem(CACHE_PROD, JSON.stringify(resProd.data)); globalProducts = resProd.data; }
+                    if(resExp?.status === 'success') { localStorage.setItem(CACHE_EXP, JSON.stringify(resExp.data)); globalExpiredData = recalculateAge(resExp.data); renderStats(globalExpiredData); renderTableData(globalExpiredData); }
+                    if(resHist?.status === 'success') { localStorage.setItem(CACHE_HIST, JSON.stringify(resHist.data)); globalHistoryData = resHist.data; renderHistory(globalHistoryData); }
+                    return true;
+                }
+
                 if (res?.status === 'success') {
                     const d = res.data;
                     if (d.rak) { localStorage.setItem(CACHE_RAK, JSON.stringify(d.rak)); renderRak(d.rak); }
@@ -363,7 +379,12 @@
                         localStorage.setItem(CACHE_HIST, JSON.stringify(d.history)); globalHistoryData = d.history;
                         renderHistory(globalHistoryData);
                     }
+                    return true;
                 }
+                return false;
+            } catch (err) {
+                console.error("Sync Error:", err);
+                return false;
             } finally {
                 document.querySelectorAll('.fa-sync, .fa-rotate-right').forEach(i => i.classList.remove('fa-spin'));
                 if(tb1) tb1.classList.remove('bg-syncing'); if(tb2) tb2.classList.remove('bg-syncing');
@@ -372,8 +393,9 @@
 
         async function backgroundSyncAllWithToast() {
             showToast('info', 'Menyinkronkan dari server...');
-            await backgroundSyncAll();
-            showToast('success', 'Data Tersinkronisasi!');
+            const success = await backgroundSyncAll();
+            if (success) showToast('success', 'Data Tersinkronisasi!');
+            else showToast('error', 'Gagal sinkronisasi data');
         }
 
         // --- RENDERING ---
@@ -410,8 +432,8 @@
 
         function renderTableData(data, filterText = '') {
             const tbody = document.getElementById('tbody-all'); if(!tbody) return;
-            let filteredData = data;
-            if(filterText) { const upperFilter = filterText.toUpperCase(); filteredData = data.filter(item => (item.rak && item.rak.toUpperCase().includes(upperFilter)) || (item.desc && item.desc.toUpperCase().includes(upperFilter)) || (item.barcode && String(item.barcode).includes(upperFilter))); }
+            let filteredData = data || [];
+            if(filterText) { const upperFilter = filterText.toUpperCase(); filteredData = filteredData.filter(item => (item.rak && item.rak.toUpperCase().includes(upperFilter)) || (item.desc && item.desc.toUpperCase().includes(upperFilter)) || (item.barcode && String(item.barcode).includes(upperFilter))); }
             if(filteredData.length === 0) { tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center">Data kosong</td></tr>'; return; }
 
             filteredData.sort((a,b) => a.umur - b.umur);
@@ -425,6 +447,7 @@
 
         function renderHistory(data) {
             const tb = document.getElementById('tbody-hist'); tb.innerHTML='';
+            if (!data || data.length === 0) { tb.innerHTML = '<tr><td colspan="8" class="p-4 text-center">Data kosong</td></tr>'; return; }
             tb.innerHTML = data.map(item => {
                 let d = item.tgl_tarik_real; try{d=new Date(d).toLocaleDateString('id-ID')}catch(e){}
                 let e = item.exp_lama; try{e=new Date(e).toLocaleDateString('id-ID')}catch(e){}
@@ -440,9 +463,9 @@
             if(targetNav) { targetNav.classList.remove('text-gray-500', 'dark:text-gray-400'); targetNav.classList.add('active-nav', 'text-primary', 'dark:text-blue-400'); }
             const target = document.getElementById('page-'+p); target.classList.remove('hidden', 'animate-fade-in'); void target.offsetWidth; target.classList.add('animate-fade-in');
             
-            // Langsung Load dari Array Memory (0 DETIK!)
-            if(p === 'all-data' && globalExpiredData.length > 0) renderTableData(globalExpiredData);
-            if(p === 'rekap' && globalHistoryData.length > 0) renderHistory(globalHistoryData); 
+            // Render LANGSUNG dari variabel memori setiap klik Tab!
+            if(p === 'all-data') renderTableData(globalExpiredData);
+            if(p === 'rekap') renderHistory(globalHistoryData); 
         }
 
         function switchDashTab(tab) {
